@@ -175,7 +175,7 @@ breakdowns and **Settings › Billing** for billing and balance; members can ope
 
 | You see | What to do |
 | --- | --- |
-| No **OpenCode Go** panel | Run `/plugins` and check the TUI list for a load error. Confirm the `package` value in `cli.json` is the absolute path to the clone root (the directory containing `package.json`) and that `bun install` has run there. Then run `/reload` or restart OpenCode. Load failures are also written to `~/.local/share/opencode/log/opencode.log`. |
+| No **OpenCode Go** panel | Run `opencode plugin list` to confirm the plugin is listed and active rather than failed or skipped. Confirm the `package` value in `cli.json` is the absolute path to the clone root (the directory containing `package.json`) and that `bun install` has run there. Then run `/reload` or restart OpenCode. Load failures are also written to `~/.local/share/opencode/log/opencode.log`. |
 | **OpenCode Go usage is unavailable for this workspace** | OpenCode returned no Go meters. Confirm the workspace has an active OpenCode Go subscription and that OpenCode is signed in to that workspace. A workspace without Go has no allowance to display. |
 | A network, authentication, or endpoint error appears in the panel | The panel shows the error message from the usage request. Check your connection and OpenCode sign-in, then wait for the next refresh. If it persists, check the OpenCode log. |
 | Usage looks stale | The panel refreshes once per `refreshMs` (60 seconds by default) while the TUI is running. Lower `refreshMs` for a faster cadence, down to 15 seconds, then reload. |
