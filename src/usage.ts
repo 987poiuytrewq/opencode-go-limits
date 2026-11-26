@@ -85,14 +85,20 @@ export function estimateRunout(
   now: number,
 ): RunoutEstimate {
   if (meter.limited || meter.percent >= 100) return { kind: "reached" };
-  if (meter.percent <= 0) return { kind: "idle" };
-  if (meter.resetsAt <= now) return { kind: "after-reset" };
+  if (!Number.isFinite(meter.percent) || meter.percent <= 0) {
+    return { kind: "idle" };
+  }
+  if (!Number.isFinite(meter.resetsAt) || meter.resetsAt <= now) {
+    return { kind: "after-reset" };
+  }
 
   const elapsed = now - windowStart(limit, meter.resetsAt);
   if (elapsed <= 0) return { kind: "idle" };
 
   const inMs = (elapsed * (100 - meter.percent)) / meter.percent;
-  if (inMs > meter.resetsAt - now) return { kind: "after-reset" };
+  if (!Number.isFinite(inMs) || inMs > meter.resetsAt - now) {
+    return { kind: "after-reset" };
+  }
   return { kind: "estimate", inMs };
 }
 
