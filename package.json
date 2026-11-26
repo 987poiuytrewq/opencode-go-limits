@@ -1,0 +1,21 @@
+{
+  "name": "opencode-go-limits",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./tui": "./src/tui.tsx"
+  },
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@opencode/plugin": "2.3.0",
+    "@opentui/core": "0.6.6",
+    "@opentui/solid": "0.6.6",
+    "@types/bun": "latest",
+    "solid-js": "^1.9.14",
+    "typescript": "^5.9.3"
+  }
+}
