@@ -7,14 +7,17 @@
     "./tui": "./src/tui.tsx"
   },
   "scripts": {
-    "test": "bun test",
-    "typecheck": "tsc --noEmit"
+    "test": "make test",
+    "test:unit": "make test-unit",
+    "typecheck": "make typecheck",
+    "format:check": "make format-check"
   },
   "devDependencies": {
     "@opencode/plugin": "2.3.0",
     "@opentui/core": "0.6.6",
     "@opentui/solid": "0.6.6",
-    "@types/bun": "latest",
+    "@types/bun": "1.4.4",
+    "bun-types": "1.4.4",
     "solid-js": "^1.9.14",
     "typescript": "^5.9.3"
   }

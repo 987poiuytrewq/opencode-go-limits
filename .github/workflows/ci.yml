@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   checks:
-    name: Typecheck and test
+    name: Format, typecheck and test
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -26,11 +26,5 @@ jobs:
         with:
           bun-version: 1.4.4
 
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Typecheck
-        run: bun run typecheck
-
-      - name: Run tests
-        run: bun test
+      - name: Run canonical CI gate
+        run: make ci
