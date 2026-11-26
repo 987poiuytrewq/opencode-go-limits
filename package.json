@@ -9,6 +9,7 @@
   "scripts": {
     "test": "make test",
     "test:unit": "make test-unit",
+    "test:integration": "make test-integration",
     "typecheck": "make typecheck",
     "format:check": "make format-check"
   },

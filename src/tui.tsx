@@ -1,6 +1,7 @@
 import { For, Show, createSignal, onCleanup, onMount } from "solid-js";
 import { TextAttributes } from "@opentui/core";
 import { Plugin, usePlugin } from "@opencode/plugin/tui";
+import { pluginSettings } from "./settings";
 import {
   estimateRunout,
   formatRunoutDate,
@@ -30,25 +31,6 @@ const LIMITS: { id: LimitName; label: string }[] = [
   { id: "weekly", label: "Weekly" },
   { id: "monthly", label: "Monthly" },
 ];
-const DEFAULT_REFRESH_MS = 60_000;
-const MIN_REFRESH_MS = 15_000;
-const MAX_REFRESH_MS = 30 * 60_000;
-
-function pluginSettings(options: unknown): { refreshMs: number } {
-  if (typeof options !== "object" || options === null) {
-    return { refreshMs: DEFAULT_REFRESH_MS };
-  }
-
-  const settings = options as Record<string, unknown>;
-  const refreshCandidate = settings.refreshMs;
-  const refreshMs =
-    typeof refreshCandidate === "number" && Number.isFinite(refreshCandidate)
-      ? Math.min(MAX_REFRESH_MS, Math.max(MIN_REFRESH_MS, refreshCandidate))
-      : DEFAULT_REFRESH_MS;
-
-  return { refreshMs };
-}
-
 function QuotaWidget(props: { refreshMs: number }) {
   const context = usePlugin();
   const [usage, setUsage] = createSignal<GoUsage>();
