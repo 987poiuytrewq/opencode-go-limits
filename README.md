@@ -29,8 +29,9 @@ display API keys, token spend, or billing details.
 
 ## Requirements
 
-- **OpenCode V2 with TUI plugin support.** The plugin is developed and tested
-  against `@opencode/plugin` 2.3.0; an older V2 release may not provide the
+- **OpenCode V2 with TUI plugin support.** The plugin is developed against
+  `@opencode/plugin` 2.3.0, and CI runs the real-host TUI smoke test against
+  OpenCode 2.2.7, 2.3.2, and 2.4.2. An older V2 release may not provide the
   `sidebar.content` slot or the experimental usage-limits client method this
   plugin calls.
 - **An OpenCode Console workspace with OpenCode Go.** The usage endpoint returns
@@ -212,12 +213,49 @@ OpenCode loads it through the `./tui` export.
 
 | Command | Runs |
 | --- | --- |
-| `make test` | Everything below except `make install`. |
+| `make test` | Formatting, typecheck, unit tests, and integration tests. No host tools required. |
 | `make format-check` | Formatting for the checked source and config files, and a strict-JSON check of the first JSON example in this README. |
 | `make typecheck` | `tsc --noEmit` over `src` and `test`. |
 | `make test-unit` | Unit tests for settings and usage formatting/estimation. |
 | `make test-integration` | Renders the plugin in a test OpenTUI renderer and covers slot registration, data loading, error states, refresh, and cleanup. |
-| `make ci` | `make install` followed by `make test`; this is what CI runs. |
+| `make test-e2e` | Opt-in real-host smoke test: launches OpenCode in tmux with an isolated HOME/XDG tree and checks that the session sidebar renders the **OpenCode Go** heading. |
+| `make ci-tools` | CI-only host setup: installs tmux and `@opencode/cli@$OPENCODE_VERSION` for the E2E matrix. |
+| `make verify-version` | CI-only guard that `$(OPENCODE_BIN) --version` matches `OPENCODE_VERSION`. |
+| `make e2e-debug` | Prints OpenCode logs from E2E runs that failed and preserved their temporary artifacts. |
+| `make ci` | `make install` followed by `make test`; this is what CI's host-free checks job runs. |
+
+`make test` and `make ci` never require tmux or an OpenCode binary. The E2E
+suite is opt-in through `E2E=1` and runs in its own CI job.
+
+### Real-host E2E
+
+`make test-e2e` needs:
+
+- **OpenCode V2** on `PATH`, or an explicit binary via
+  `make test-e2e OPENCODE_BIN=/path/to/opencode`. The CI matrix covers 2.2.7,
+  2.3.2, and 2.4.2.
+- **tmux**.
+- **Installed dependencies**: run `make install` in the checkout first.
+
+The test never reads your account. It creates a temporary HOME and XDG tree, a
+temporary git repository, and a global `cli.json` whose `plugins` entry points
+at this checkout's absolute path. It then launches `opencode --standalone` on a
+private tmux socket, starts a new session (Ctrl+X then N followed by a one-word
+prompt so the session view mounts), and waits for the stable **OpenCode Go**
+heading. It does not assert Go credentials, usage values, or network success; a
+workspace without Go still renders the heading and an unavailable message.
+
+Extra knobs:
+
+| Variable | Purpose |
+| --- | --- |
+| `E2E_KEEP=1` | Keep the temporary HOME, repository, log, and pane capture after a passing run. Failed runs keep them automatically. |
+| `E2E_PLUGIN_ROOT=/absolute/path` | Point `cli.json` at a different checkout. OpenCode cannot load a plugin path containing `#`, so use this when running from a git worktree whose directory name contains `#`. |
+| `OPENCODE_BIN=/path/to/opencode` | Use a specific OpenCode binary. |
+| `TMUX_BIN=/path/to/tmux` | Use a specific tmux binary. |
+
+When an E2E run fails, the test prints the last tmux pane and the OpenCode log.
+`make e2e-debug` prints any artifacts kept under `$TMPDIR`.
 
 To run one file while developing:
 
@@ -238,6 +276,7 @@ The integration tests use a path-safe Solid transform preload in
 | `src/usage.ts` | Pure formatting and runout-estimation helpers. |
 | `test/unit/` | Unit tests for settings and usage helpers. |
 | `test/integration/` | Mock OpenCode host and TUI rendering tests. |
+| `test/e2e/` | Opt-in real-host tmux smoke test and its isolated fixtures. |
 | `test/preload.ts` | Bun preload that applies the OpenTUI Solid transform. |
-| `Makefile` | Canonical install, format, typecheck, test, and CI gates. |
-| `.github/workflows/ci.yml` | GitHub Actions workflow that runs `make ci` on Bun 1.4.4. |
+| `Makefile` | Canonical install, format, typecheck, test, CI, and E2E gates. |
+| `.github/workflows/ci.yml` | Host-free checks plus the OpenCode 2.2.7/2.3.2/2.4.2 E2E matrix on Bun 1.4.4. |

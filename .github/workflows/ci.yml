@@ -28,3 +28,38 @@ jobs:
 
       - name: Run canonical CI gate
         run: make ci
+
+  e2e:
+    name: TUI E2E with OpenCode ${{ matrix.version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ["2.2.7", "2.3.2", "2.4.2"]
+    env:
+      OPENCODE_VERSION: ${{ matrix.version }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+
+      - name: Install E2E system tools
+        run: make ci-tools
+
+      - name: Verify OpenCode version
+        run: make verify-version
+
+      - name: Install package dependencies
+        run: make install
+
+      - name: Run real-host TUI E2E
+        run: make test-e2e
+
+      - name: Show E2E diagnostics
+        if: failure()
+        run: make e2e-debug
