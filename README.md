@@ -30,9 +30,9 @@ display API keys, token spend, or billing details.
 ## Requirements
 
 - **OpenCode V2 with TUI plugin support.** The plugin is developed and tested
-  against the `2.3.0` OpenCode plugin packages; an older V2 release may not
-  provide the `sidebar.content` slot or the experimental usage-limits client
-  method this plugin calls.
+  against `@opencode/plugin` 2.3.0; an older V2 release may not provide the
+  `sidebar.content` slot or the experimental usage-limits client method this
+  plugin calls.
 - **An OpenCode Console workspace with OpenCode Go.** The usage endpoint returns
   no Go meters for workspaces without an active Go subscription, and the panel
   shows an unavailable message instead.
@@ -120,8 +120,8 @@ Monthly                         7d
   that percentage. The bar shrinks to fit the sidebar and never goes below one
   column. It rounds to the nearest column, so a low percentage can show an
   empty bar.
-- Bars are green below 80%, yellow from 80% to 99%, and red at 100% or when the
-  API marks the meter as limited.
+- Bars use the theme's success color below 80%, its warning color from 80% to
+  99%, and its error color at 100% or when the API marks the meter as limited.
 - A `⚠` warning appears next to a meter when the plugin projects that the meter
   will run out before it resets.
 
