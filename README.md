@@ -24,16 +24,17 @@ Expanded mode (the default) shows all three Go meters:
 
 *Expanded mode, captured from the real OpenTUI renderer with deterministic fake usage data.*
 
-Compact mode reduces the panel to two rows:
+Compact mode reduces the panel to two rows: a bold title with the monthly
+percentage, then the most urgent short-window status:
 
-![OpenCode Go compact sidebar showing a right-aligned 66% monthly percentage and a 5-hour projected runout at 14:15](demo/compact.svg)
+![OpenCode Go compact sidebar showing a bold title, a right-aligned 66% monthly percentage, and a 5-hour projected runout at 14:15](demo/compact.svg)
 
 *Compact mode, captured from deterministic fake usage data.*
 
 Pace mode compares each meter with the elapsed portion of its window on one
-composite bar:
+composite bar beneath a bold title:
 
-![OpenCode Go pace sidebar with a behind-pace 5-hour, an ahead-of-pace weekly meter, and a critical monthly meter at 100%](demo/pace.svg)
+![OpenCode Go pace sidebar with a bold title, a behind-pace 5-hour, an ahead-of-pace weekly meter, and a critical monthly meter at 100%](demo/pace.svg)
 
 *Pace mode, captured from deterministic fake usage data.*
 
@@ -46,10 +47,12 @@ composite bar:
   began.
 - **Theme-aware colors:** success, warning, and error colors from the active
   OpenCode theme.
-- **Optional compact mode** that collapses the panel to two rows: a right-aligned
-  monthly percentage and the most urgent short-window meter.
-- **Optional pace mode** that shows one composite bar per meter, comparing
-  usage with the elapsed portion of the 5-hour, weekly, or monthly window.
+- **Optional compact mode** that collapses the panel to two rows: a bold title
+  with the right-aligned monthly percentage and the most urgent short-window
+  meter.
+- **Optional pace mode** that shows a bold title plus one composite bar per
+  meter, comparing usage with the elapsed portion of the 5-hour, weekly, or
+  monthly window.
 - **Configurable refresh cadence** with safe bounds, so a typo in the config
   cannot hammer the server.
 - **No separate credentials:** the plugin uses OpenCode's client and the
@@ -151,7 +154,7 @@ absolute path instead of the npm package name.
 | Option | Default | Description |
 | --- | --- | --- |
 | `refreshMs` | `60000` | How often the sidebar reloads usage, in milliseconds. Values below `15000` are raised to 15 seconds; values above `1800000` are lowered to 30 minutes. A value that is not a finite number falls back to the default. |
-| `mode` | `"expanded"` | Sidebar layout. `"expanded"` shows all three meters as two-line bars. `"compact"` shows two rows: a monthly summary and the most urgent 5-hour or weekly status. `"pace"` shows exactly three one-line rows with a composite usage-versus-elapsed bar per meter. Any value other than `"compact"` or `"pace"` falls back to `"expanded"`. |
+| `mode` | `"expanded"` | Sidebar layout. `"expanded"` shows all three meters as two-line bars. `"compact"` shows two rows: a bold title with the monthly percentage, then the most urgent 5-hour or weekly status. `"pace"` shows a bold title plus exactly three one-line rows with a composite usage-versus-elapsed bar per meter. Any value other than `"compact"` or `"pace"` falls back to `"expanded"`. |
 
 The interval starts when the sidebar panel mounts. Refreshes are skipped while
 a previous request is still running, so a slow or offline server cannot build
@@ -160,14 +163,14 @@ up a queue of requests. The plugin has no manual refresh command; if you change
 
 ### Compact mode
 
-Set `"mode": "compact"` to reduce the panel to two rows. The first row is a
-right-aligned monthly percentage and nothing else: while usage data is
-available it has no title, no `Monthly` label, and no status symbol. The second
-row shows the most urgent short-window meter (5-hour or weekly), with its status
-symbol and either a projected runout or reset detail:
+Set `"mode": "compact"` to reduce the panel to two rows. The first row shows a
+bold **OpenCode Go** title on the left and a right-aligned monthly percentage on
+the right. The percentage is bare: no `Monthly` label and no status symbol. The
+second row shows the most urgent short-window meter (5-hour or weekly), with its
+status symbol and either a projected runout or reset detail:
 
 ```text
-                                                             66%
+OpenCode Go                                                  66%
 5-hour  ⚠ 14:15
 ```
 
@@ -179,8 +182,8 @@ Severity on this row is conveyed by color only, so the value stays a bare
 percentage:
 
 ```text
-                                                             85%
-                                                            100%
+OpenCode Go                                                  85%
+OpenCode Go                                                 100%
 ```
 
 The second row selects only the 5-hour and weekly meters, using the same urgency
@@ -205,13 +208,13 @@ text, and theme color always agree, so the mode is readable without color.
 Compact mode keeps its other states in two distinct rows as well:
 
 ```text
-                                                               …
+OpenCode Go                                                    …
 … loading limits
 
-                                                               –
+OpenCode Go                                                    –
 – Go usage unavailable
 
-                                                               ✖
+OpenCode Go                                                    ✖
 ✖ error · limits endpoint offline
 ```
 
@@ -221,14 +224,15 @@ refresh.
 
 ### Pace mode
 
-Set `"mode": "pace"` to render exactly three rows, one per Go window. Each row
-shows the meter label, the percentage used, and one composite bar that compares
-usage with how much of the window has elapsed:
+Set `"mode": "pace"` to render four rows: a bold **OpenCode Go** title, then one
+row per Go window. Each meter row shows the label, the percentage used, and one
+composite bar that compares usage with how much of the window has elapsed:
 
 ```text
+OpenCode Go
 5-hour        25% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━─────────
 Weekly        95% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━──
-Monthly       100%  ✖ limit reached ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Monthly       100% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 The bar has four segment roles:
@@ -243,8 +247,8 @@ The bar has four segment roles:
 In the sample, the 5-hour meter is behind pace, so its bar is green up to 25%
 and muted thick through the 80% elapsed mark. The weekly meter is ahead of pace
 at 95% against roughly 86% elapsed, so green runs to the pace line and yellow
-covers the over-pace usage. Monthly is limited, so its entire used segment is
-red and the row carries `✖ limit reached`.
+covers the over-pace usage. Monthly is limited, so its entire used segment and
+its percentage are red; no separate status text is shown.
 
 The `demo/pace.svg` screenshot above is regenerated by `make demo` from this
 deterministic behind/ahead/critical fake dataset.
@@ -263,11 +267,11 @@ Elapsed percentages and used percentages are clamped to `0`–`100`. A reset in
 the past is treated as 100% elapsed. When the reset timestamp is missing or
 invalid, the row falls back to a plain usage bar without a pace overlay. A meter
 that the API marks as limited, or one at 100% or more, is always critical: the
-used segment, percentage, and `✖ limit reached` status use the theme's error
-color, so the state does not depend on color alone.
+used segment and percentage use the theme's error color, so the state does not
+depend on color alone.
 
 Like compact mode, pace mode does not wrap at narrow sidebar widths. Widen the
-sidebar if a critical status does not fit.
+sidebar if a label, percentage, or bar does not fit.
 
 ## Reading the panel
 
@@ -351,7 +355,7 @@ breakdowns and **Settings › Billing** for billing and balance; members can ope
 | The monthly warning date looks wrong | Monthly runouts assume a calendar-month cycle. Go resets the monthly allowance when the paid period renews, so treat the monthly warning as an estimate. |
 | The bars look short | The bar uses the sidebar's measured width minus the percentage prefix, with a one-column minimum. Widen the sidebar to give the bars more room. |
 | The compact rows are cut off | Compact mode clips rather than wraps at narrow sidebar widths. Widen the sidebar if the monthly summary or short-window detail does not fit. |
-| The pace rows are cut off | Pace mode also clips rather than wraps. Widen the sidebar if a label, percentage, critical status, or bar does not fit. |
+| The pace rows are cut off | Pace mode also clips rather than wraps. Widen the sidebar if a label, percentage, or bar does not fit. |
 | `mode` stays expanded | Use the exact string `"compact"` or `"pace"` in `options` on the plugin entry in `cli.json`. Any other value falls back to `"expanded"`, and you must reload OpenCode after changing it. |
 
 ## How it works
@@ -362,9 +366,9 @@ When the slot renders, the widget:
 
 1. Calls `context.client.experimental.usage.limits()` for the current location.
 2. Displays the returned `go.rolling`, `go.weekly`, and `go.monthly` meters, or
-   the monthly summary plus the most urgent short-window meter when `mode` is
-   `"compact"`, or the three composite usage-versus-pace bars when `mode` is
-   `"pace"`.
+   the title and monthly summary plus the most urgent short-window meter when
+   `mode` is `"compact"`, or the title plus three composite usage-versus-pace
+   bars when `mode` is `"pace"`.
 3. Refreshes on the configured interval and listens for renderer resize and
    frame events to remeasure the bar.
 4. Removes its timer and renderer listeners when the slot is unloaded.
@@ -447,8 +451,8 @@ The integration tests use a path-safe Solid transform preload in
 | --- | --- |
 | `src/tui.tsx` | Plugin definition, `sidebar.content` slot, usage requests, refresh timer, and Solid UI. |
 | `src/settings.ts` | `refreshMs` and `mode` defaults, fallbacks, and clamping. |
-| `src/compact.ts` | Two-row compact status selection and formatting: monthly summary and most urgent short-window meter. |
-| `src/pace.ts` | Three-row pace layout: elapsed-window math and composite usage-versus-pace bar segments. |
+| `src/compact.ts` | Two-row compact status selection and formatting: title, monthly summary, and most urgent short-window meter. |
+| `src/pace.ts` | Four-row pace layout: title, elapsed-window math, and composite usage-versus-pace bar segments. |
 | `src/usage.ts` | Pure formatting and runout-estimation helpers. |
 | `test/unit/` | Unit tests for settings, compact status, pace math/bars, and usage helpers. |
 | `test/integration/` | Mock OpenCode host and TUI rendering tests. |

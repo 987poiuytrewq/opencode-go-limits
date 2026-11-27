@@ -6,11 +6,14 @@ import {
   type LimitName,
 } from "./usage";
 
-/** Tone used for a pace row's percentage and critical status text. */
+/** Tone used for a pace row's percentage. */
 export type PaceTone = "success" | "warning" | "critical";
 
 /** Fixed label column so the three pace bars start at the same offset. */
 export const PACE_LABEL_WIDTH = 13;
+
+/** Title heading rendered above the three pace rows. */
+export const PACE_TITLE = "OpenCode Go";
 
 /** Glyph counts for one composite pace bar. The counts always sum to width. */
 export interface PaceBarSegments {
@@ -38,8 +41,6 @@ export interface PaceRow {
   readonly label: string;
   /** Two-digit percentage plus its trailing space, for example ` 25% `. */
   readonly percentText: string;
-  /** Explicit critical status text, or an empty string when healthy. */
-  readonly status: string;
   readonly tone: PaceTone;
   readonly critical: boolean;
   readonly ahead: boolean;
@@ -58,7 +59,6 @@ export interface PaceBarInput {
 
 const THICK = "━";
 const EMPTY = "─";
-const CRITICAL_STATUS = "✖ limit reached";
 
 function clampPercent(percent: number): number {
   if (!Number.isFinite(percent)) return 0;
@@ -190,10 +190,8 @@ export function buildPaceRows(
           ? "warning"
           : "success";
     const percentText = formatPercentPrefix(percent);
-    const status = critical ? CRITICAL_STATUS : "";
     const labelText = `${label.padEnd(PACE_LABEL_WIDTH)} `;
-    const prefixLength =
-      labelText.length + percentText.length + (status ? status.length + 2 : 0);
+    const prefixLength = labelText.length + percentText.length;
     const segments = computePaceBar({
       percent,
       elapsedPercent,
@@ -205,7 +203,6 @@ export function buildPaceRows(
       limit: id,
       label: labelText,
       percentText,
-      status,
       tone,
       critical,
       ahead,

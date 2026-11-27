@@ -120,18 +120,19 @@ const SCENARIOS: readonly DemoScenario[] = [
     },
     output: join(import.meta.dir, "compact.svg"),
     title:
-      "OpenCode Go compact sidebar with a right-aligned monthly percentage and a projected 5-hour runout",
+      "OpenCode Go compact sidebar with a bold title, a right-aligned monthly percentage, and a projected 5-hour runout",
     validate(lines, charFrame) {
       if (
         lines.length !== 2 ||
-        lines[0]?.trim() !== "66%" ||
-        !lines[0]?.startsWith(" ") ||
+        !lines[0]?.startsWith("OpenCode Go") ||
         !lines[0]?.endsWith("66%") ||
-        lines[0]?.includes("OpenCode Go") ||
+        lines[0]?.includes("Monthly") ||
+        lines[0]?.includes("⚠") ||
+        lines[0]?.includes("✖") ||
         lines[1] !== "5-hour  ⚠ 14:15" ||
         !charFrame.includes("66%") ||
         !charFrame.includes("5-hour  ⚠ 14:15") ||
-        charFrame.includes("OpenCode Go")
+        !charFrame.includes("OpenCode Go")
       ) {
         throw new Error(
           `[compact] Unexpected compact rows: ${JSON.stringify(lines)} (frame: ${JSON.stringify(charFrame)})`,
@@ -143,28 +144,30 @@ const SCENARIOS: readonly DemoScenario[] = [
     // Pace: rolling is behind pace, weekly is ahead, monthly is limited.
     mode: "pace",
     width: 64,
-    height: 4,
+    height: 5,
     usage: {
       ...paceBase,
       monthly: { ...paceBase.monthly, limited: true },
     },
     output: join(import.meta.dir, "pace.svg"),
     title:
-      "OpenCode Go pace sidebar showing behind-pace, ahead-of-pace, and critical monthly bars",
+      "OpenCode Go pace sidebar with a bold title and behind-pace, ahead-of-pace, and critical monthly bars",
     validate(lines, charFrame, captured) {
       const visible = lines.join("\n");
       if (
-        lines.length !== 3 ||
-        !lines[0]?.startsWith("5-hour") ||
-        !lines[1]?.startsWith("Weekly") ||
-        !lines[2]?.startsWith("Monthly") ||
+        lines.length !== 4 ||
+        lines[0] !== "OpenCode Go" ||
+        !lines[1]?.startsWith("5-hour") ||
+        !lines[2]?.startsWith("Weekly") ||
+        !lines[3]?.startsWith("Monthly") ||
         !visible.includes("25% ") ||
         !visible.includes("95% ") ||
         !visible.includes("100% ") ||
-        !visible.includes("✖ limit reached") ||
+        visible.includes("limit reached") ||
+        visible.includes("✖") ||
         !visible.includes("━") ||
         !visible.includes("─") ||
-        !charFrame.includes("✖ limit reached")
+        !charFrame.includes("OpenCode Go")
       ) {
         throw new Error(
           `[pace] Unexpected pace rows: ${JSON.stringify(lines)} (frame: ${JSON.stringify(charFrame)})`,

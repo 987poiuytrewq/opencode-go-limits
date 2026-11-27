@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   PACE_LABEL_WIDTH,
+  PACE_TITLE,
   buildPaceRows,
   computePaceBar,
   formatPaceBar,
@@ -259,6 +260,10 @@ describe("pace bar glyphs and widths", () => {
 });
 
 describe("pace rows", () => {
+  test("names the heading row above the three meters", () => {
+    expect(PACE_TITLE).toBe("OpenCode Go");
+  });
+
   test("builds exactly three labeled rows in limit order", () => {
     const rows = buildPaceRows(usage([25, 50, 66]), NOW, 64);
 
@@ -276,7 +281,6 @@ describe("pace rows", () => {
     for (const row of rows) {
       expect(row.label).toHaveLength(PACE_LABEL_WIDTH + 1);
       expect(row.label.endsWith(" ")).toBe(true);
-      expect(row.status).toBe("");
       expect(row.critical).toBe(false);
     }
   });
@@ -304,7 +308,7 @@ describe("pace rows", () => {
     expect(monthly?.segments.elapsed).toBeGreaterThan(0);
   });
 
-  test("renders a limited meter as an explicit critical row", () => {
+  test("renders a limited meter as a critical bar without status text", () => {
     const rows = buildPaceRows(
       usage([10, 20, 100], undefined, [false, false, true]),
       NOW,
@@ -314,12 +318,12 @@ describe("pace rows", () => {
 
     expect(monthly?.critical).toBe(true);
     expect(monthly?.tone).toBe("critical");
-    expect(monthly?.status).toBe("✖ limit reached");
     expect(monthly?.percentText).toBe("100% ");
     expect(monthly?.segments.used).toBeGreaterThan(0);
     expect(monthly?.segments.elapsed).toBe(0);
     expect(monthly?.segments.over).toBe(0);
     expect(monthly?.segments.empty).toBe(0);
+    expect(monthly?.bar.empty).toBe("");
   });
 
   test("treats a meter at 100 percent as critical even when not limited", () => {
@@ -330,7 +334,8 @@ describe("pace rows", () => {
     );
 
     expect(rows[0]?.critical).toBe(true);
-    expect(rows[0]?.status).toBe("✖ limit reached");
+    expect(rows[0]?.tone).toBe("critical");
+    expect(rows[0]?.segments.used).toBeGreaterThan(0);
   });
 
   test("uses a plain bar and threshold tone for an invalid reset", () => {

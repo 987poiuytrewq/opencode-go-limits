@@ -39,14 +39,16 @@ export interface CompactDetailRow extends CompactRow {
 }
 
 /**
- * The compact sidebar is two rows: a right-aligned monthly percentage on the
- * first row, then the most urgent short-window (5-hour or weekly) status.
+ * The compact sidebar is two rows: the title and a right-aligned monthly
+ * percentage on the first row, then the most urgent short-window (5-hour or
+ * weekly) status.
  */
 export interface CompactRows {
   readonly summary: CompactRow;
   readonly detail: CompactDetailRow;
 }
 
+const TITLE = "OpenCode Go";
 const MONTHLY = LIMITS.find(({ id }) => id === "monthly") as {
   readonly id: "monthly";
   readonly label: string;
@@ -58,6 +60,11 @@ const SEVERITY_SYMBOLS: Record<CompactSeverity, string> = {
   warning: "⚠",
   ok: "✓",
 };
+
+/** Compact mode always shows the title on the left of the first row. */
+export function compactTitle(): string {
+  return TITLE;
+}
 
 function finitePercent(percent: number): number {
   return Number.isFinite(percent) ? percent : 0;
@@ -177,9 +184,10 @@ export function formatCompactPercent(percent: number): string {
 /**
  * Format the monthly summary for the right-aligned first compact row.
  *
- * While usage data exists the row is only the bare percentage (`66%`): no
- * title, no `Monthly` label, and no status symbol. Severity is carried by the
- * row tone instead, so the renderer colors it success, warning, or error.
+ * The bold title on the left supplies the context, so the summary is a bare
+ * percentage (`66%`): no `Monthly` label and no status symbol. Severity is
+ * carried by the row tone instead, so the renderer colors it success, warning,
+ * or error.
  */
 export function formatCompactMonthly(status: CompactStatus): string {
   return formatCompactPercent(status.percent);
