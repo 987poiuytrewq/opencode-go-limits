@@ -143,7 +143,7 @@ a symbol, a status word, the selected meter, its percentage, and either the
 reset countdown or the projected runout:
 
 ```text
-OpenCode Go ⚠ WARN · Monthly 80% · resets 7d
+OpenCode Go ⚠ WARN · Weekly 85% · resets 1d
 ```
 
 Only the most urgent meter is shown:
