@@ -10,6 +10,9 @@ import {
 
 export type CompactSeverity = "critical" | "warning" | "ok";
 
+/** Color role for one compact row. `neutral` keeps healthy summaries unstyled. */
+export type CompactTone = CompactSeverity | "muted" | "neutral";
+
 export interface CompactStatus {
   readonly severity: CompactSeverity;
   readonly limit: LimitName;
@@ -20,17 +23,38 @@ export interface CompactStatus {
   readonly projection: RunoutEstimate;
 }
 
+/** One rendered row of the compact sidebar: its text and semantic tone. */
+export interface CompactRow {
+  readonly text: string;
+  readonly tone: CompactTone;
+}
+
+/**
+ * The compact sidebar is two rows: a monthly summary on the right of the title
+ * row, then the most urgent short-window (5-hour or weekly) status.
+ */
+export interface CompactRows {
+  readonly summary: CompactRow;
+  readonly detail: CompactRow;
+}
+
 const TITLE = "OpenCode Go";
-const SEVERITY_LABELS: Record<CompactSeverity, string> = {
-  critical: "LIMIT",
-  warning: "WARN",
-  ok: "OK",
+const MONTHLY = LIMITS.find(({ id }) => id === "monthly") as {
+  readonly id: "monthly";
+  readonly label: string;
 };
+const SHORT_LIMITS = LIMITS.filter(({ id }) => id !== "monthly");
+
 const SEVERITY_SYMBOLS: Record<CompactSeverity, string> = {
   critical: "✖",
   warning: "⚠",
   ok: "✓",
 };
+
+/** Compact mode always shows the title on the left of the first row. */
+export function compactTitle(): string {
+  return TITLE;
+}
 
 function finitePercent(percent: number): number {
   return Number.isFinite(percent) ? percent : 0;
@@ -43,6 +67,25 @@ function severityFor(
   if (meter.limited || meter.percent >= 100) return "critical";
   if (meter.percent >= 80 || projection.kind === "estimate") return "warning";
   return "ok";
+}
+
+function makeStatus(
+  id: LimitName,
+  label: string,
+  usage: GoUsage,
+  now: number,
+): CompactStatus {
+  const meter = usage[id];
+  const projection = estimateRunout(id, meter, now);
+  return {
+    severity: severityFor(meter, projection),
+    limit: id,
+    label,
+    percent: meter.percent,
+    limited: meter.limited,
+    resetsAt: meter.resetsAt,
+    projection,
+  };
 }
 
 function pickHighestPercent(statuses: readonly CompactStatus[]): CompactStatus {
@@ -88,32 +131,8 @@ function pickWarning(statuses: readonly CompactStatus[]): CompactStatus {
   });
 }
 
-/**
- * Choose the single most urgent Go meter for the compact sidebar line.
- *
- * Critical meters (limited by the API or at/above 100%) always win. Warnings
- * come next, ordered by the earliest projected runout and then by percentage.
- * A healthy panel falls back to the highest percentage in use. Ties keep the
- * meter order in `LIMITS`.
- */
-export function selectCompactStatus(
-  usage: GoUsage,
-  now: number,
-): CompactStatus {
-  const statuses = LIMITS.map(({ id, label }): CompactStatus => {
-    const meter = usage[id];
-    const projection = estimateRunout(id, meter, now);
-    return {
-      severity: severityFor(meter, projection),
-      limit: id,
-      label,
-      percent: meter.percent,
-      limited: meter.limited,
-      resetsAt: meter.resetsAt,
-      projection,
-    };
-  });
-
+/** Rank meters by urgency, keeping the `LIMITS` order for ties. */
+function selectMostUrgent(statuses: readonly CompactStatus[]): CompactStatus {
   const critical = statuses.filter((status) => status.severity === "critical");
   if (critical.length > 0) return pickCritical(critical);
 
@@ -123,7 +142,28 @@ export function selectCompactStatus(
   return pickHighestPercent(statuses);
 }
 
-/** Format a percentage for the compact line, clamped to `0%`–`100%`. */
+/** Summarize the monthly meter, which always occupies the first compact row. */
+export function selectMonthlyStatus(
+  usage: GoUsage,
+  now: number,
+): CompactStatus {
+  return makeStatus(MONTHLY.id, MONTHLY.label, usage, now);
+}
+
+/**
+ * Choose the most urgent short-window (5-hour or weekly) meter for the second
+ * compact row. The monthly meter is summarized separately and never selected.
+ */
+export function selectCompactStatus(
+  usage: GoUsage,
+  now: number,
+): CompactStatus {
+  return selectMostUrgent(
+    SHORT_LIMITS.map(({ id, label }) => makeStatus(id, label, usage, now)),
+  );
+}
+
+/** Format a percentage for a compact row, clamped to `0%`–`100%`. */
 export function formatCompactPercent(percent: number): string {
   const safePercent = Number.isFinite(percent)
     ? Math.min(100, Math.max(0, percent))
@@ -131,35 +171,86 @@ export function formatCompactPercent(percent: number): string {
   return `${Math.round(safePercent)}%`;
 }
 
-/** Format the selected meter as the one-line compact sidebar status. */
-export function formatCompactStatus(
+/**
+ * Format the monthly summary for the right side of the first compact row.
+ *
+ * Healthy months stay plain (`Monthly 66%`). Approaching or exhausted months
+ * carry the same explicit symbol as the second row so the state is readable
+ * without relying on theme color.
+ */
+export function formatCompactMonthly(status: CompactStatus): string {
+  const summary = `${status.label} ${formatCompactPercent(status.percent)}`;
+  if (status.severity === "critical")
+    return `${summary} ${SEVERITY_SYMBOLS.critical}`;
+  if (status.severity === "warning") {
+    return `${summary}  ${SEVERITY_SYMBOLS.warning}`;
+  }
+  return summary;
+}
+
+/**
+ * Format the most urgent short-window status for the second compact row.
+ *
+ * Warnings keep exactly two spaces before `⚠`, matching the requested
+ * `5-hour window  ⚠ 14:15` shape. Critical and healthy rows use one space.
+ */
+export function formatCompactShortWindow(
   status: CompactStatus,
   now: number,
 ): string {
   const detail =
-    status.severity === "warning" && status.projection.kind === "estimate"
-      ? `runout ${formatRunoutDate(status.limit, status.projection, now)}`
-      : `resets ${formatResetCountdown(status.resetsAt, new Date(now))}`;
-  const symbol = SEVERITY_SYMBOLS[status.severity];
-  const label = SEVERITY_LABELS[status.severity];
-  // Compact warnings intentionally keep exactly two spaces before ⚠.
+    status.severity === "critical"
+      ? "limit reached"
+      : status.severity === "warning" && status.projection.kind === "estimate"
+        ? formatRunoutDate(status.limit, status.projection, now)
+        : `resets ${formatResetCountdown(status.resetsAt, new Date(now))}`;
   const gap = status.severity === "warning" ? "  " : " ";
-  return `${TITLE}${gap}${symbol} ${label} · ${status.label} ${formatCompactPercent(status.percent)} · ${detail}`;
+  return `${status.label}${gap}${SEVERITY_SYMBOLS[status.severity]} ${detail}`;
 }
 
-/** One-line compact status shown while the first request is in flight. */
-export function formatCompactLoading(): string {
-  return `${TITLE} … loading limits`;
+function monthlyTone(status: CompactStatus): CompactTone {
+  return status.severity === "ok" ? "neutral" : status.severity;
 }
 
-/** One-line compact status when the workspace has no Go allowance. */
-export function formatCompactUnavailable(): string {
-  return `${TITLE} – Go usage unavailable`;
+/** Build both compact rows from a usage payload. */
+export function formatCompactStatus(usage: GoUsage, now: number): CompactRows {
+  const monthly = selectMonthlyStatus(usage, now);
+  const shortWindow = selectCompactStatus(usage, now);
+
+  return {
+    summary: {
+      text: formatCompactMonthly(monthly),
+      tone: monthlyTone(monthly),
+    },
+    detail: {
+      text: formatCompactShortWindow(shortWindow, now),
+      tone: shortWindow.severity,
+    },
+  };
 }
 
-/** One-line compact status for a failed usage request. */
-export function formatCompactError(cause: string): string {
+/** Two-row compact status shown while the first request is in flight. */
+export function formatCompactLoading(): CompactRows {
+  return {
+    summary: { text: "Monthly …", tone: "muted" },
+    detail: { text: "… loading limits", tone: "muted" },
+  };
+}
+
+/** Two-row compact status when the workspace has no Go allowance. */
+export function formatCompactUnavailable(): CompactRows {
+  return {
+    summary: { text: "Monthly –", tone: "muted" },
+    detail: { text: "– Go usage unavailable", tone: "muted" },
+  };
+}
+
+/** Two-row compact status for a failed usage request. */
+export function formatCompactError(cause: string): CompactRows {
   const message =
     cause.replace(/\s+/g, " ").trim() || "Could not load Go limits";
-  return `${TITLE} ✖ error · ${message}`;
+  return {
+    summary: { text: "Monthly ✖", tone: "critical" },
+    detail: { text: `✖ error · ${message}`, tone: "critical" },
+  };
 }

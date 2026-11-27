@@ -16,7 +16,7 @@ The plugin is deliberately small: it reads the usage meters that OpenCode
 already has access to, follows your active OpenCode theme, and does not store or
 display API keys, token spend, or billing details.
 
-![OpenCode Go compact sidebar showing a rolling 5-hour window at 86% with a projected runout at 09:45](demo/demo.svg)
+![OpenCode Go compact sidebar showing Monthly at 66% and a 5-hour window projected runout at 14:15](demo/demo.svg)
 
 *Compact mode, captured from the real OpenTUI renderer with deterministic fake
 usage data.*
@@ -31,8 +31,8 @@ usage data.*
   began.
 - **Theme-aware colors:** success, warning, and error colors from the active
   OpenCode theme.
-- **Optional compact mode** that collapses the panel to one line and highlights
-  only the most urgent meter.
+- **Optional compact mode** that collapses the panel to two rows: a monthly
+  summary and the most urgent short-window meter.
 - **Configurable refresh cadence** with safe bounds, so a typo in the config
   cannot hammer the server.
 - **No separate credentials:** the plugin uses OpenCode's client and the
@@ -134,7 +134,7 @@ absolute path instead of the npm package name.
 | Option | Default | Description |
 | --- | --- | --- |
 | `refreshMs` | `60000` | How often the sidebar reloads usage, in milliseconds. Values below `15000` are raised to 15 seconds; values above `1800000` are lowered to 30 minutes. A value that is not a finite number falls back to the default. |
-| `mode` | `"expanded"` | Sidebar layout. `"expanded"` shows all three meters as two-line bars. `"compact"` shows a single line for the most urgent meter. Any value other than `"compact"` falls back to `"expanded"`. |
+| `mode` | `"expanded"` | Sidebar layout. `"expanded"` shows all three meters as two-line bars. `"compact"` shows two rows: a monthly summary and the most urgent 5-hour or weekly status. Any value other than `"compact"` falls back to `"expanded"`. |
 
 The interval starts when the sidebar panel mounts. Refreshes are skipped while
 a previous request is still running, so a slow or offline server cannot build
@@ -143,39 +143,60 @@ up a queue of requests. The plugin has no manual refresh command; if you change
 
 ### Compact mode
 
-Set `"mode": "compact"` to collapse the panel to one line. The line always shows
-a symbol, a status word, the selected meter, its percentage, and either the
-reset countdown or the projected runout:
+Set `"mode": "compact"` to reduce the panel to two rows. The first row keeps the
+`OpenCode Go` title on the left and always summarizes the monthly meter on the
+right. The second row shows the most urgent short-window meter (5-hour window or
+weekly), with its status symbol and either a projected runout or reset detail:
 
 ```text
-OpenCode Go  ⚠ WARN · Weekly 85% · resets 1d
+OpenCode Go                              Monthly 66%
+5-hour window  ⚠ 14:15
 ```
 
-Only the most urgent meter is shown:
-
-- **`✖ LIMIT` (critical):** a meter the API marks as limited, or one at 100% or
-  more. If several meters are critical, the highest percentage wins.
-- **`⚠ WARN` (warning):** a meter at 80% or more, or one projected to run out
-  before it resets. Among warnings, the earliest projected runout wins; when no
-  warning has a projection, the highest percentage wins.
-- **`✓ OK`:** none of the meters is urgent. The highest percentage is shown.
-
-The symbol and status word carry the same meaning as the theme color, so the
-mode is readable without color. The line uses the theme's error, warning, or
-success color for the selected severity.
-
-Compact mode also keeps its other states on one line and distinct from each
-other:
+The monthly summary stays plain when the month is healthy. When the monthly
+meter is approaching its limit (80% or more, or projected to run out before it
+resets), the value carries `⚠` and the theme's warning color. When it is
+exhausted or marked limited by the API, it carries `✖` and the theme's error
+color:
 
 ```text
-OpenCode Go … loading limits
-OpenCode Go – Go usage unavailable
-OpenCode Go ✖ error · limits endpoint offline
+OpenCode Go                              Monthly 85%  ⚠
+OpenCode Go                              Monthly 100% ✖
 ```
 
-Loading, unavailable, and request-error states use muted or error theme colors
-and never mix with a meter status. A request error takes precedence over any
-stale meter values from an earlier refresh.
+The second row selects only the 5-hour and weekly meters, using the same urgency
+order as expanded mode:
+
+- **`✖` (critical):** a meter the API marks as limited, or one at 100% or more.
+  The row reads `<meter> ✖ limit reached`. If several meters are critical, the
+  highest percentage wins.
+- **`⚠` (warning):** a meter at 80% or more, or one projected to run out before
+  it resets. The row shows the projected runout time (for example,
+  `5-hour window  ⚠ 14:15`) or the reset countdown when there is no projection.
+  Among warnings, the earliest projected runout wins; when no warning has a
+  projection, the highest percentage wins.
+- **`✓` (healthy):** neither short-window meter is urgent. The row reads
+  `<meter> ✓ resets <countdown>` for the higher-percentage meter.
+
+Warning rows keep exactly two spaces before `⚠`. The symbol, status text, and
+theme color always agree, so the mode is readable without color.
+
+Compact mode keeps its other states in two distinct rows as well:
+
+```text
+OpenCode Go                              Monthly …
+… loading limits
+
+OpenCode Go                              Monthly –
+– Go usage unavailable
+
+OpenCode Go                              Monthly ✖
+✖ error · limits endpoint offline
+```
+
+Loading and unavailable states use muted theme colors; a request error uses the
+error color and takes precedence over any stale meter values from an earlier
+refresh.
 
 ## Reading the panel
 
@@ -258,7 +279,7 @@ breakdowns and **Settings › Billing** for billing and balance; members can ope
 | `refreshMs` has no effect | Put `options` on the matching plugin entry in the global `cli.json`, not in `opencode.json`, and make sure the `package` value names the same package or clone. Non-numeric values fall back to 60 seconds. |
 | The monthly warning date looks wrong | Monthly runouts assume a calendar-month cycle. Go resets the monthly allowance when the paid period renews, so treat the monthly warning as an estimate. |
 | The bars look short | The bar uses the sidebar's measured width minus the percentage prefix, with a one-column minimum. Widen the sidebar to give the bars more room. |
-| The compact line is cut off | Compact mode clips rather than wraps at narrow sidebar widths. Widen the sidebar if the selected meter, percentage, and countdown do not fit. |
+| The compact rows are cut off | Compact mode clips rather than wraps at narrow sidebar widths. Widen the sidebar if the monthly summary or short-window detail does not fit. |
 | `mode` stays expanded | Use the exact string `"compact"` in `options` on the plugin entry in `cli.json`. Any other value falls back to `"expanded"`, and you must reload OpenCode after changing it. |
 
 ## How it works
@@ -269,7 +290,8 @@ When the slot renders, the widget:
 
 1. Calls `context.client.experimental.usage.limits()` for the current location.
 2. Displays the returned `go.rolling`, `go.weekly`, and `go.monthly` meters, or
-   the single most urgent meter when `mode` is `"compact"`.
+   the monthly summary plus the most urgent short-window meter when `mode` is
+   `"compact"`.
 3. Refreshes on the configured interval and listens for renderer resize and
    frame events to remeasure the bar.
 4. Removes its timer and renderer listeners when the slot is unloaded.
@@ -352,7 +374,7 @@ The integration tests use a path-safe Solid transform preload in
 | --- | --- |
 | `src/tui.tsx` | Plugin definition, `sidebar.content` slot, usage requests, refresh timer, and Solid UI. |
 | `src/settings.ts` | `refreshMs` and `mode` defaults, fallbacks, and clamping. |
-| `src/compact.ts` | One-line compact status selection and formatting. |
+| `src/compact.ts` | Two-row compact status selection and formatting: monthly summary and most urgent short-window meter. |
 | `src/usage.ts` | Pure formatting and runout-estimation helpers. |
 | `test/unit/` | Unit tests for settings, compact status, and usage helpers. |
 | `test/integration/` | Mock OpenCode host and TUI rendering tests. |

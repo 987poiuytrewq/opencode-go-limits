@@ -1,24 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="588" height="168" viewBox="0 0 588 168" role="img" aria-labelledby="demo-title demo-desc">
-  <title id="demo-title">OpenCode Go compact sidebar with a projected rolling runout</title>
-  <desc id="demo-desc">Terminal-style screenshot of the OpenCode Go sidebar in compact mode, captured from a 64 by 3 character frame rendered with fake usage data. The single line reads: OpenCode Go  ⚠ WARN · 5-hour window 86% · runout 09:45</desc>
-  <rect width="588" height="168" fill="#0b0e14"/>
-  <rect x="24" y="20" width="540" height="104" rx="10" fill="#000000" opacity="0.45"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="672" height="190" viewBox="0 0 672 190" role="img" aria-labelledby="demo-title demo-desc">
+  <title id="demo-title">OpenCode Go compact sidebar with a monthly summary and a projected rolling runout</title>
+  <desc id="demo-desc">Terminal-style screenshot of the OpenCode Go sidebar in compact mode, captured from a 64 by 3 character frame rendered with fake usage data. The two rows read: OpenCode Go                                          Monthly 66%
+5-hour window  ⚠ 14:15</desc>
+  <rect width="672" height="190" fill="#0b0e14"/>
+  <rect x="24" y="20" width="624" height="126" rx="10" fill="#000000" opacity="0.45"/>
   <defs>
     <clipPath id="window-clip">
-      <rect x="24" y="16" width="540" height="104" rx="10"/>
+      <rect x="24" y="16" width="624" height="126" rx="10"/>
     </clipPath>
   </defs>
   <g clip-path="url(#window-clip)">
-    <rect x="24" y="16" width="540" height="104" fill="#0d1117"/>
-    <rect x="24" y="16" width="540" height="32" fill="#161b26"/>
-    <line x1="24" y1="48" x2="564" y2="48" stroke="#30363d"/>
+    <rect x="24" y="16" width="624" height="126" fill="#0d1117"/>
+    <rect x="24" y="16" width="624" height="32" fill="#161b26"/>
+    <line x1="24" y1="48" x2="648" y2="48" stroke="#30363d"/>
     <circle cx="44" cy="32" r="5" fill="#ff5f57"/>
     <circle cx="60" cy="32" r="5" fill="#febc2e"/>
     <circle cx="76" cy="32" r="5" fill="#28c840"/>
     <text x="92" y="36" fill="#c9d1d9" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="11">OpenCode — session sidebar (compact)</text>
-    <text x="48" y="86" fill="#ffff00" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">OpenCode Go  ⚠ WARN · 5-hour window 86% · runout 09:45</text>
+    <text x="48" y="86" fill="#ffffff" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">OpenCode Go</text>
+    <text x="147" y="86" fill="#ffffff" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">                                          Monthly 66%</text>
+    <text x="48" y="108" fill="#ffff00" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">5-hour window  ⚠ 14:15</text>
   </g>
-  <rect x="24" y="16" width="540" height="104" rx="10" fill="none" stroke="#30363d"/>
-  <text x="24" y="150" fill="#8b949e" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="11">Rendered with @opentui/core/testing + @opentui/solid · fake Go usage · frozen clock</text>
+  <rect x="24" y="16" width="624" height="126" rx="10" fill="none" stroke="#30363d"/>
+  <text x="24" y="172" fill="#8b949e" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="11">Rendered with @opentui/core/testing + @opentui/solid · fake Go usage · frozen clock</text>
 </svg>
