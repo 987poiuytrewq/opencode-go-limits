@@ -19,11 +19,8 @@ import {
   type CapturedSpan,
   type RGBA,
 } from "@opentui/core";
-import {
-  createMockHost,
-  usageAt,
-  type MockHost,
-} from "../test/integration/host";
+import { createMockHost, type MockHost } from "../test/integration/host";
+import type { UsageLimitsGo } from "@opencode/client";
 
 // Pin the timezone before any date formatting so runout labels and countdowns
 // are byte-for-byte reproducible on every host.
@@ -40,7 +37,7 @@ interface DemoScenario {
   readonly mode: "expanded" | "pace";
   readonly width: number;
   readonly height: number;
-  readonly usage: ReturnType<typeof usageAt>;
+  readonly usage: UsageLimitsGo;
   readonly output: string;
   readonly title: string;
   readonly validate: (
@@ -50,23 +47,27 @@ interface DemoScenario {
   ) => void;
 }
 
-const expandedBase = usageAt(FIXED_NOW, {
-  rolling: 25,
-  weekly: 50,
-  monthly: 66,
-});
-const paceBase = usageAt(FIXED_NOW, {
-  rolling: 25,
-  weekly: 95,
-  monthly: 100,
-});
+const HOUR = 60 * 60_000;
+
+// One balanced dataset shared by both views, so the screenshots tell the same
+// story: the 5-hour meter is behind pace, weekly is ahead of pace (and so
+// shows a runout warning in the full view), and monthly is comfortably behind.
+const DEMO_USAGE: UsageLimitsGo = {
+  rolling: { percent: 42, limited: false, resetsAt: FIXED_NOW + 2.5 * HOUR },
+  weekly: { percent: 61, limited: false, resetsAt: FIXED_NOW + 84 * HOUR },
+  monthly: {
+    percent: 28,
+    limited: false,
+    resetsAt: FIXED_NOW + 20 * 24 * HOUR,
+  },
+};
 
 const SCENARIOS: readonly DemoScenario[] = [
   {
     mode: "expanded",
     width: SIDEBAR_COLUMNS,
     height: 14,
-    usage: expandedBase,
+    usage: DEMO_USAGE,
     output: join(import.meta.dir, "expanded.svg"),
     title:
       "OpenCode Go expanded sidebar showing the 5-hour, Weekly, and Monthly meters",
@@ -80,11 +81,12 @@ const SCENARIOS: readonly DemoScenario[] = [
       for (const needle of [
         "OpenCode Go",
         "5-hour",
-        "25% ",
+        "42% ",
         "Weekly",
-        "50% ",
+        "61% ",
         "Monthly",
-        "66% ",
+        "28% ",
+        "⚠",
         "━",
         "─",
       ]) {
@@ -94,7 +96,7 @@ const SCENARIOS: readonly DemoScenario[] = [
           );
         }
       }
-      if (!charFrame.includes("OpenCode Go") || !charFrame.includes("66%")) {
+      if (!charFrame.includes("OpenCode Go") || !charFrame.includes("28%")) {
         throw new Error(
           `[expanded] Unexpected character frame: ${JSON.stringify(charFrame)}`,
         );
@@ -102,14 +104,11 @@ const SCENARIOS: readonly DemoScenario[] = [
     },
   },
   {
-    // Pace: rolling is behind pace, weekly is ahead, monthly is limited.
+    // Pace: rolling is behind pace, weekly is ahead, monthly is behind.
     mode: "pace",
     width: SIDEBAR_COLUMNS,
     height: 5,
-    usage: {
-      ...paceBase,
-      monthly: { ...paceBase.monthly, limited: true },
-    },
+    usage: DEMO_USAGE,
     output: join(import.meta.dir, "pace.svg"),
     title:
       "OpenCode Go pace sidebar with a bold title and behind-pace, ahead-of-pace, and critical monthly bars",
@@ -120,11 +119,11 @@ const SCENARIOS: readonly DemoScenario[] = [
         lines.length !== 4 ||
         !lines[0]?.match(/^OpenCode Go\s+pace$/) ||
         !rolling?.startsWith("5-hour") ||
-        !rolling.endsWith(" 25%") ||
+        !rolling.endsWith(" 42%") ||
         !weekly?.startsWith("Weekly") ||
-        !weekly.endsWith(" 95%") ||
+        !weekly.endsWith(" 61%") ||
         !monthly?.startsWith("Monthly") ||
-        !monthly.endsWith("100%") ||
+        !monthly.endsWith(" 28%") ||
         visible.includes("limit reached") ||
         visible.includes("✖") ||
         !visible.includes("━") ||
@@ -156,13 +155,17 @@ const SCENARIOS: readonly DemoScenario[] = [
         );
       }
 
-      // The composite bars must exercise every semantic fixture color.
+      // The composite bars must show on-pace, behind-pace, and ahead-of-pace
+      // segments, and nothing critical.
       const fills = new Set(
         captured.lines.flatMap((line) =>
           line.spans.map((span) => hexColor(span.fg)),
         ),
       );
-      for (const color of ["#3fb950", "#8b949e", "#d29922", "#f85149"]) {
+      if (fills.has("#f85149")) {
+        throw new Error("[pace] The demo should not render a critical meter");
+      }
+      for (const color of ["#3fb950", "#8b949e", "#d29922"]) {
         if (!fills.has(color)) {
           throw new Error(
             `[pace] Expected the fixture palette color ${color} in: ${JSON.stringify([...fills])}`,

@@ -9,7 +9,7 @@ If this panel helps you, please star the repo on GitHub—it helps other OpenCod
 Your [OpenCode Go](https://opencode.ai) usage limits in the OpenCode V2 sidebar. See the rolling 5-hour, weekly and
 monthly meters at a glance, whether you're ahead of or behind pace, and when each one resets, without leaving OpenCode.
 
-<img src="https://raw.githubusercontent.com/987poiuytrewq/opencode-go-usage-limits/main/demo/pace.svg" alt="The OpenCode Go panel in pace mode: the 5-hour meter at 25% and behind pace, Weekly at 95% and ahead of pace, Monthly at 100% in red" width="464" />
+<img src="https://raw.githubusercontent.com/987poiuytrewq/opencode-go-usage-limits/main/demo/pace.svg" alt="The OpenCode Go panel in pace mode: the 5-hour meter at 42% and behind pace, Weekly at 61% and ahead of pace, Monthly at 28% and behind pace" width="464" />
 
 ## Features
 
@@ -93,20 +93,20 @@ The bar compares usage with how much of the window has passed:
 
 A meter at 100%, or one OpenCode marks as limited, turns red.
 
-In the screenshot at the top, the 5-hour meter is behind pace (25% used, about 80% of the window gone), Weekly is ahead of
-pace (95% used, about 86% gone), and Monthly is used up.
+In the screenshot at the top, the 5-hour meter is behind pace (42% used, halfway through the window), Weekly is ahead
+of pace (61% used, halfway through), and Monthly is behind pace (28% used, a third of the way through).
 
 ### Full view
 
 Each meter takes two lines: its name and reset countdown, then the percentage used and a bar.
 
-<img src="https://raw.githubusercontent.com/987poiuytrewq/opencode-go-usage-limits/main/demo/expanded.svg" alt="The OpenCode Go panel in full mode: 5-hour at 25% resetting in 1h 0m, Weekly at 50% resetting in 1d, Monthly at 66% resetting in 7d" width="464" />
+<img src="https://raw.githubusercontent.com/987poiuytrewq/opencode-go-usage-limits/main/demo/expanded.svg" alt="The OpenCode Go panel in full mode: 5-hour at 42% resetting in 2h 30m, Weekly at 61% resetting in 3d 12h with a runout warning for Sun 18:00, Monthly at 28% resetting in 20d" width="464" />
 
 | Element | Meaning |
 | --- | --- |
 | Countdown | Time until the meter resets, such as `4h 42m`, `5d 13h`, `<1m` or `now`. |
 | Bar colour | Green below 80%, yellow from 80%, red at 100% or when the meter is limited. |
-| `⚠` and a time | The meter is on course to run out before it resets, and roughly when. |
+| `⚠` and a time | The meter is on course to run out before it resets, and roughly when. In the screenshot, Weekly is on course to run out on Sunday at 18:00, before it resets in 3d 12h. |
 
 The runout time is shown as a local time for the 5-hour meter (`⚠ 10:45`, to the nearest 15 minutes), a local day and
 hour for the weekly meter (`⚠ Sat 20:00`) and a UTC date for the monthly meter (`⚠ Dec 2`).
