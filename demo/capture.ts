@@ -347,14 +347,17 @@ function lineText(line: RenderedLine): string {
   return text;
 }
 
-/** The real UI renders the heading bold; keep that attribute in the SVG. */
-function hasBoldTitle(frame: CapturedFrame): boolean {
-  return frame.lines.some((line) =>
-    line.spans.some(
-      (span) =>
-        (span.attributes & TextAttributes.BOLD) !== 0 &&
-        span.text.trim() === "OpenCode Go",
-    ),
+/**
+ * Check the heading's captured attribute. Returns `undefined` for modes that
+ * do not render the title; otherwise every title span must be bold.
+ */
+function hasBoldTitle(frame: CapturedFrame): boolean | undefined {
+  const titleSpans = frame.lines
+    .flatMap((line) => line.spans)
+    .filter((span) => span.text.trim() === "OpenCode Go");
+  if (titleSpans.length === 0) return undefined;
+  return titleSpans.every(
+    (span) => (span.attributes & TextAttributes.BOLD) !== 0,
   );
 }
 
@@ -464,9 +467,9 @@ async function main(): Promise<void> {
         const charFrame = setup.captureCharFrame();
         captured = setup.captureSpans();
         scenario.validate(drawableLines(captured).map(lineText), charFrame);
-        if (!hasBoldTitle(captured)) {
+        if (hasBoldTitle(captured) === false) {
           throw new Error(
-            `[${scenario.mode}] Expected a bold OpenCode Go title span`,
+            `[${scenario.mode}] Expected the OpenCode Go title span to be bold`,
           );
         }
 
