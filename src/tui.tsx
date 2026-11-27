@@ -1,17 +1,6 @@
 import { For, Show, createSignal, onCleanup, onMount } from "solid-js";
-import { TextAttributes } from "@opentui/core";
+import { MouseButton, TextAttributes } from "@opentui/core";
 import { Plugin, usePlugin } from "@opencode/plugin/tui";
-import {
-  compactTitle,
-  formatCompactError,
-  formatCompactLoading,
-  formatCompactUnavailable,
-  formatCompactView,
-  type CompactDetailRow,
-  type CompactRow,
-  type CompactTone,
-  type CompactView,
-} from "./compact";
 import { PACE_TITLE, buildPaceRows, type PaceTone } from "./pace";
 import { pluginSettings, type SidebarMode } from "./settings";
 import {
@@ -45,6 +34,8 @@ function QuotaWidget(props: { refreshMs: number; mode: SidebarMode }) {
   const [unavailable, setUnavailable] = createSignal(false);
   const [loading, setLoading] = createSignal(true);
   const [barWidth, setBarWidth] = createSignal(1);
+  const [mode, setMode] = createSignal(props.mode);
+  const [modeHovered, setModeHovered] = createSignal(false);
   let sidebarBox: LayoutMeasureNode | undefined;
   let requestPending = false;
   let timer: ReturnType<typeof setInterval> | undefined;
@@ -97,18 +88,16 @@ function QuotaWidget(props: { refreshMs: number; mode: SidebarMode }) {
     context.renderer.off("resize", measureBar);
   });
 
-  const toneColor = (tone: CompactTone | PaceTone) =>
+  const toneColor = (tone: PaceTone | "muted") =>
     tone === "critical"
       ? context.theme.text.feedback.error.base
       : tone === "warning"
         ? context.theme.text.feedback.warning.base
-        : tone === "ok" || tone === "success"
+        : tone === "success"
           ? context.theme.text.feedback.success.base
-          : tone === "muted"
-            ? context.theme.text.muted
-            : context.theme.text.base;
+          : context.theme.text.muted;
 
-  const paceFallback = (): { text: string; tone: CompactTone } => {
+  const paceFallback = (): { text: string; tone: PaceTone | "muted" } => {
     const failure = error();
     if (failure) return { text: `✖ error · ${failure}`, tone: "critical" };
     if (unavailable()) {
@@ -117,36 +106,8 @@ function QuotaWidget(props: { refreshMs: number; mode: SidebarMode }) {
     return { text: "… loading limits", tone: "muted" };
   };
 
-  const compactView = (): CompactView => {
-    const failure = error();
-    if (failure) {
-      return { kind: "detail", rows: formatCompactError(failure) };
-    }
-    if (unavailable()) {
-      return { kind: "detail", rows: formatCompactUnavailable() };
-    }
-    if (loading()) {
-      return { kind: "detail", rows: formatCompactLoading() };
-    }
-
-    const data = usage();
-    if (!data) {
-      return { kind: "detail", rows: formatCompactUnavailable() };
-    }
-
-    return formatCompactView(data, Date.now());
-  };
-
-  const compactTitleBold = (): boolean => compactView().kind !== "healthy";
-
-  const compactSummary = (): CompactRow => {
-    const view = compactView();
-    return view.kind === "healthy" ? view.summary : view.rows.summary;
-  };
-
-  const compactDetail = (): CompactDetailRow | undefined => {
-    const view = compactView();
-    return view.kind === "detail" ? view.rows.detail : undefined;
+  const toggleMode = () => {
+    setMode((current) => (current === "pace" ? "expanded" : "pace"));
   };
 
   return (
@@ -158,17 +119,29 @@ function QuotaWidget(props: { refreshMs: number; mode: SidebarMode }) {
       flexGrow={1}
       minWidth={0}
     >
-      <Show when={props.mode === "expanded"}>
-        <box
-          flexDirection="row"
-          justifyContent="space-between"
-          alignItems="center"
-          width="100%"
+      <box
+        flexDirection="row"
+        justifyContent="space-between"
+        alignItems="center"
+        width="100%"
+      >
+        <text fg={context.theme.text.base} attributes={TextAttributes.BOLD}>
+          {PACE_TITLE}
+        </text>
+        <text
+          fg={
+            modeHovered() ? context.theme.text.base : context.theme.text.muted
+          }
+          onMouseOver={() => setModeHovered(true)}
+          onMouseOut={() => setModeHovered(false)}
+          onMouseDown={(event) => {
+            if (event.button === MouseButton.LEFT) toggleMode();
+          }}
         >
-          <text fg={context.theme.text.base} attributes={TextAttributes.BOLD}>
-            OpenCode Go
-          </text>
-        </box>
+          {mode() === "pace" ? "pace" : "full"}
+        </text>
+      </box>
+      <Show when={mode() === "expanded"}>
         <Show
           when={usage()}
           fallback={
@@ -244,10 +217,7 @@ function QuotaWidget(props: { refreshMs: number; mode: SidebarMode }) {
           )}
         </Show>
       </Show>
-      <Show when={props.mode === "pace"}>
-        <text fg={context.theme.text.base} attributes={TextAttributes.BOLD}>
-          {PACE_TITLE}
-        </text>
+      <Show when={mode() === "pace"}>
         <Show
           when={usage()}
           fallback={
@@ -289,38 +259,6 @@ function QuotaWidget(props: { refreshMs: number; mode: SidebarMode }) {
                 </text>
               )}
             </For>
-          )}
-        </Show>
-      </Show>
-      <Show when={props.mode === "compact"}>
-        <box
-          flexDirection="row"
-          justifyContent="space-between"
-          alignItems="center"
-          width="100%"
-        >
-          <text
-            fg={context.theme.text.base}
-            attributes={
-              compactTitleBold() ? TextAttributes.BOLD : TextAttributes.NONE
-            }
-          >
-            {compactTitle()}
-          </text>
-          <text fg={toneColor(compactSummary().tone)}>
-            {compactSummary().text}
-          </text>
-        </box>
-        <Show when={compactDetail()}>
-          {(detail) => (
-            <text width="100%" wrapMode="none">
-              <span style={{ fg: context.theme.text.base }}>
-                {detail().label}
-              </span>
-              <span style={{ fg: toneColor(detail().tone) }}>
-                {detail().status}
-              </span>
-            </text>
           )}
         </Show>
       </Show>

@@ -101,22 +101,13 @@ describe("plugin settings", () => {
     });
   });
 
-  test("uses pace mode by default and keeps an explicit expanded mode", () => {
+  test("uses pace mode by default and keeps both supported explicit modes", () => {
     expect(DEFAULT_MODE).toBe("pace");
     expect(pluginSettings({})).toMatchObject({ mode: "pace" });
     expect(pluginSettings({ mode: "expanded" })).toMatchObject({
       mode: "expanded",
     });
-  });
-
-  test("enables compact mode only for the exact compact value", () => {
-    expect(pluginSettings({ mode: "compact" })).toMatchObject({
-      mode: "compact",
-    });
-    expect(pluginSettings({ refreshMs: 30_000, mode: "compact" })).toEqual({
-      refreshMs: 30_000,
-      mode: "compact",
-    });
+    expect(pluginSettings({ mode: "pace" })).toMatchObject({ mode: "pace" });
   });
 
   test("enables pace mode only for the exact pace value", () => {
@@ -128,6 +119,9 @@ describe("plugin settings", () => {
   });
 
   test("falls back to pace for invalid mode values", () => {
+    expect(pluginSettings({ mode: "compact" })).toMatchObject({
+      mode: DEFAULT_MODE,
+    });
     expect(pluginSettings({ mode: "COMPACT" })).toMatchObject({
       mode: DEFAULT_MODE,
     });
