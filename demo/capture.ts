@@ -1,6 +1,6 @@
 /**
- * Render the expanded, compact, and pace sidebars through the real OpenTUI test
- * renderer and write deterministic SVG screenshots.
+ * Render the expanded and pace sidebars through the real OpenTUI test renderer
+ * and write deterministic SVG screenshots.
  *
  * The usage payload is fake, the clock is frozen, and the only client is the
  * mock host from `test/integration/host.ts`, so the capture never reads real Go
@@ -33,14 +33,12 @@ const FIXED_NOW = Date.UTC(2026, 10, 27, 12, 45, 0);
 const SESSION_ID = "ses_demo_sidebar";
 
 interface DemoScenario {
-  readonly mode: "expanded" | "compact" | "pace";
+  readonly mode: "expanded" | "pace";
   readonly width: number;
   readonly height: number;
   readonly usage: ReturnType<typeof usageAt>;
   readonly output: string;
   readonly title: string;
-  /** Whether the heading renders bold; defaults to `true` like expanded/pace. */
-  readonly titleBold?: boolean;
   readonly validate: (
     lines: readonly string[],
     charFrame: string,
@@ -48,11 +46,6 @@ interface DemoScenario {
   ) => void;
 }
 
-const compactBase = usageAt(FIXED_NOW, {
-  rolling: 10,
-  weekly: 20,
-  monthly: 66,
-});
 const expandedBase = usageAt(FIXED_NOW, {
   rolling: 25,
   weekly: 50,
@@ -105,44 +98,6 @@ const SCENARIOS: readonly DemoScenario[] = [
     },
   },
   {
-    // Compact: all three meters are healthy, so the sidebar is one line.
-    mode: "compact",
-    width: 64,
-    height: 2,
-    usage: compactBase,
-    output: join(import.meta.dir, "compact.svg"),
-    title:
-      "OpenCode Go compact sidebar with a normal-text title and a green healthy indicator",
-    titleBold: false,
-    validate(lines, charFrame, captured) {
-      if (
-        lines.length !== 1 ||
-        !lines[0]?.startsWith("OpenCode Go") ||
-        !lines[0]?.endsWith("●") ||
-        lines[0]?.includes("%") ||
-        lines[0]?.includes("⚠") ||
-        lines[0]?.includes("✖") ||
-        !charFrame.includes("●") ||
-        !charFrame.includes("OpenCode Go")
-      ) {
-        throw new Error(
-          `[compact] Unexpected compact rows: ${JSON.stringify(lines)} (frame: ${JSON.stringify(charFrame)})`,
-        );
-      }
-
-      const fills = new Set(
-        captured.lines.flatMap((line) =>
-          line.spans.map((span) => hexColor(span.fg)),
-        ),
-      );
-      if (!fills.has("#3fb950")) {
-        throw new Error(
-          `[compact] Expected the healthy indicator color #3fb950 in: ${JSON.stringify([...fills])}`,
-        );
-      }
-    },
-  },
-  {
     // Pace: rolling is behind pace, weekly is ahead, monthly is limited.
     mode: "pace",
     width: 64,
@@ -159,7 +114,7 @@ const SCENARIOS: readonly DemoScenario[] = [
       const [rolling = "", weekly = "", monthly = ""] = lines.slice(1);
       if (
         lines.length !== 4 ||
-        lines[0] !== "OpenCode Go" ||
+        !lines[0]?.match(/^OpenCode Go\s+pace$/) ||
         !rolling?.startsWith("5-hour") ||
         !rolling.endsWith(" 25%") ||
         !weekly?.startsWith("Weekly") ||
@@ -518,10 +473,9 @@ async function main(): Promise<void> {
           charFrame,
           captured,
         );
-        const expectedBold = scenario.titleBold ?? true;
-        if (hasBoldTitle(captured) !== expectedBold) {
+        if (hasBoldTitle(captured) !== true) {
           throw new Error(
-            `[${scenario.mode}] Expected the OpenCode Go title span to be ${expectedBold ? "bold" : "normal"}`,
+            `[${scenario.mode}] Expected the OpenCode Go title span to be bold`,
           );
         }
 

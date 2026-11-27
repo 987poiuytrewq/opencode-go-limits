@@ -1,6 +1,7 @@
 /** @jsxImportSource @opentui/solid */
 import { describe, expect, spyOn, test } from "bun:test";
 import {
+  MouseButton,
   TextAttributes,
   type CapturedFrame,
   type CapturedSpan,
@@ -302,32 +303,44 @@ function thickColors(spans: CapturedSpan[]): Set<string> {
   );
 }
 
-describe("compact mode", () => {
-  test("collapses to a single normal-text title and green healthy indicator when every meter is healthy", async () => {
-    const testRenderer = await createTestRenderer({ width: 64, height: 4 });
+describe("pace mode", () => {
+  test("shows a right-aligned mode switcher that toggles between pace and full", async () => {
+    const testRenderer = await createTestRenderer({
+      width: 64,
+      height: 8,
+      enableMouseMovement: true,
+    });
     const fixedNow = new Date(2026, 10, 27, 12, 45, 0, 0).getTime();
     const nowSpy = spyOn(Date, "now").mockReturnValue(fixedNow);
     try {
       const host = createMockHost({
         renderer: testRenderer.renderer,
-        usage: usageAt(fixedNow, { rolling: 10, weekly: 20, monthly: 66 }),
-        options: { mode: "compact" },
+        usage: usageAt(fixedNow),
       });
       const cleanup = await mountHost(host);
       await testRenderer.flush();
 
-      const lines = nonEmptyLines(testRenderer.captureCharFrame());
-      expect(lines).toHaveLength(1);
-      expect(lines[0]).toMatch(/^OpenCode Go\s+●$/);
-      expect(lines[0]).not.toContain("%");
-      expect(lines[0]).not.toContain("⚠");
-      expect(lines[0]).not.toContain("✖");
-      expect(lines[0]).not.toContain("Weekly");
+      let lines = nonEmptyLines(testRenderer.captureCharFrame());
+      expect(lines[0]).toMatch(/^OpenCode Go\s+pace$/);
+      expect(lines).toHaveLength(4);
+      expect(spanColor(testRenderer.captureSpans(), "pace")).toBe("#8b949e");
 
-      const spans = testRenderer.captureSpans();
-      expect(spanBold(spans, "OpenCode Go")).toBe(false);
-      expect(spanColor(spans, "OpenCode Go")).toBe("#c9d1d9");
-      expect(spanColor(spans, "●")).toBe("#3fb950");
+      const modeColumn = lines[0]?.lastIndexOf("pace") ?? -1;
+      expect(modeColumn).toBeGreaterThan(0);
+      await testRenderer.mockMouse.moveTo(modeColumn, 0);
+      await testRenderer.flush();
+      expect(spanColor(testRenderer.captureSpans(), "pace")).toBe("#c9d1d9");
+
+      await testRenderer.mockMouse.moveTo(0, 7);
+      await testRenderer.flush();
+      expect(spanColor(testRenderer.captureSpans(), "pace")).toBe("#8b949e");
+
+      await testRenderer.mockMouse.click(modeColumn, 0, MouseButton.LEFT);
+      await testRenderer.flush();
+      lines = nonEmptyLines(testRenderer.captureCharFrame());
+      expect(lines).toHaveLength(7);
+      expect(lines[0]).toMatch(/^OpenCode Go\s+full$/);
+
       cleanup();
     } finally {
       nowSpy.mockRestore();
@@ -335,262 +348,26 @@ describe("compact mode", () => {
     }
   });
 
-  test("keeps the two-row detail whenever a meter is warning or critical", async () => {
-    const warningRenderer = await createTestRenderer({ width: 64, height: 6 });
-    const criticalRenderer = await createTestRenderer({ width: 64, height: 6 });
-    const fixedNow = new Date(2026, 10, 27, 12, 45, 0, 0).getTime();
-    const nowSpy = spyOn(Date, "now").mockReturnValue(fixedNow);
-    try {
-      const warningHost = createMockHost({
-        renderer: warningRenderer.renderer,
-        usage: usageAt(fixedNow, { rolling: 10, weekly: 20, monthly: 85 }),
-        options: { mode: "compact" },
-      });
-      const warningCleanup = await mountHost(warningHost);
-      await warningRenderer.flush();
-      const warningLines = nonEmptyLines(warningRenderer.captureCharFrame());
-      expect(warningLines).toHaveLength(2);
-      expect(warningLines[0]).toMatch(/^OpenCode Go\s+85%$/);
-      expect(warningLines.join("\n")).not.toContain("●");
-
-      const criticalHost = createMockHost({
-        renderer: criticalRenderer.renderer,
-        usage: usageAt(fixedNow, { rolling: 100, weekly: 20, monthly: 66 }),
-        options: { mode: "compact" },
-      });
-      const criticalCleanup = await mountHost(criticalHost);
-      await criticalRenderer.flush();
-      const criticalLines = nonEmptyLines(criticalRenderer.captureCharFrame());
-      expect(criticalLines).toHaveLength(2);
-      expect(criticalLines[1]).toBe("5-hour ✖ limit reached");
-      expect(criticalLines.join("\n")).not.toContain("●");
-
-      criticalCleanup();
-      warningCleanup();
-    } finally {
-      nowSpy.mockRestore();
-      await warningRenderer.dispose();
-      await criticalRenderer.dispose();
-    }
-  });
-
-  test("renders the bold title and right-aligned monthly percentage plus the most urgent short-window warning on two rows", async () => {
-    const testRenderer = await createTestRenderer({ width: 64, height: 6 });
-    const fixedNow = new Date(2026, 10, 27, 12, 45, 0, 0).getTime();
-    const nowSpy = spyOn(Date, "now").mockReturnValue(fixedNow);
-    try {
-      const base = usageAt(fixedNow, { rolling: 70, weekly: 10, monthly: 66 });
-      const host = createMockHost({
-        renderer: testRenderer.renderer,
-        usage: {
-          rolling: { ...base.rolling, resetsAt: fixedNow + 1.5 * 60 * 60_000 },
-          weekly: { ...base.weekly, resetsAt: fixedNow + 7 * 24 * 60 * 60_000 },
-          monthly: {
-            ...base.monthly,
-            resetsAt: fixedNow + 5 * 24 * 60 * 60_000,
-          },
-        },
-        options: { mode: "compact" },
-      });
-      const cleanup = await mountHost(host);
-      await testRenderer.flush();
-
-      const lines = nonEmptyLines(testRenderer.captureCharFrame());
-      expect(lines).toHaveLength(2);
-      expect(lines[0]).toMatch(/^OpenCode Go\s+66%$/);
-      expect(lines[0]?.endsWith("66%")).toBe(true);
-      expect(lines[0]).not.toContain("Monthly");
-      expect(lines[0]).not.toContain("⚠");
-      expect(lines[0]).not.toContain("✖");
-      expect(lines[1]).toBe("5-hour  ⚠ 14:15");
-      const spans = testRenderer.captureSpans();
-      expect(spanColor(spans, "OpenCode Go")).toBe("#c9d1d9");
-      expect(spanBold(spans, "OpenCode Go")).toBe(true);
-      expect(spanColor(spans, "66%")).toBe("#3fb950");
-      expect(spanColor(spans, "5-hour")).toBe("#c9d1d9");
-      expect(spanColor(spans, "⚠ 14:15")).toBe("#d29922");
-      cleanup();
-    } finally {
-      nowSpy.mockRestore();
-      await testRenderer.dispose();
-    }
-  });
-
-  test("marks an approaching monthly value on the summary row", async () => {
-    const testRenderer = await createTestRenderer({ width: 64, height: 6 });
+  test("uses the configured mode as the switcher's initial mode", async () => {
+    const testRenderer = await createTestRenderer({ width: 64, height: 8 });
     try {
       const host = createMockHost({
         renderer: testRenderer.renderer,
         usage: usageAt(Date.now()),
-        options: { mode: "compact" },
+        options: { mode: "expanded" },
       });
       const cleanup = await mountHost(host);
       await testRenderer.flush();
 
       const lines = nonEmptyLines(testRenderer.captureCharFrame());
-      expect(lines).toHaveLength(2);
-      expect(lines[0]).toMatch(/^OpenCode Go\s+80%$/);
-      expect(lines[1]).toContain("Weekly ✓ resets 1d");
-      const spans = testRenderer.captureSpans();
-      expect(spanBold(spans, "OpenCode Go")).toBe(true);
-      expect(spanColor(spans, "80%")).toBe("#d29922");
-      expect(spanColor(spans, "Weekly")).toBe("#c9d1d9");
-      expect(spanColor(spans, "✓ resets 1d")).toBe("#3fb950");
+      expect(lines).toHaveLength(7);
+      expect(lines[0]).toMatch(/^OpenCode Go\s+full$/);
       cleanup();
     } finally {
       await testRenderer.dispose();
     }
   });
 
-  test("renders an exhausted monthly meter as a critical summary row", async () => {
-    const testRenderer = await createTestRenderer({ width: 64, height: 6 });
-    try {
-      const now = Date.now();
-      const base = usageAt(now);
-      const host = createMockHost({
-        renderer: testRenderer.renderer,
-        usage: {
-          ...base,
-          monthly: { ...base.monthly, percent: 100, limited: true },
-        },
-        options: { mode: "compact" },
-      });
-      const cleanup = await mountHost(host);
-      await testRenderer.flush();
-
-      const lines = nonEmptyLines(testRenderer.captureCharFrame());
-      expect(lines).toHaveLength(2);
-      expect(lines[0]).toMatch(/^OpenCode Go\s+100%$/);
-      const spans = testRenderer.captureSpans();
-      expect(spanBold(spans, "OpenCode Go")).toBe(true);
-      expect(spanColor(spans, "100%")).toBe("#f85149");
-      cleanup();
-    } finally {
-      await testRenderer.dispose();
-    }
-  });
-
-  test("colors a limited monthly meter red even below 100%", async () => {
-    const testRenderer = await createTestRenderer({ width: 64, height: 6 });
-    try {
-      const base = usageAt(Date.now());
-      const host = createMockHost({
-        renderer: testRenderer.renderer,
-        usage: {
-          ...base,
-          monthly: { ...base.monthly, percent: 20, limited: true },
-        },
-        options: { mode: "compact" },
-      });
-      const cleanup = await mountHost(host);
-      await testRenderer.flush();
-
-      const lines = nonEmptyLines(testRenderer.captureCharFrame());
-      expect(lines).toHaveLength(2);
-      expect(lines[0]).toMatch(/^OpenCode Go\s+20%$/);
-      expect(spanColor(testRenderer.captureSpans(), "20%")).toBe("#f85149");
-      cleanup();
-    } finally {
-      await testRenderer.dispose();
-    }
-  });
-
-  test("keeps the short-window label base-colored and colors a critical status", async () => {
-    const testRenderer = await createTestRenderer({ width: 64, height: 6 });
-    try {
-      const base = usageAt(Date.now());
-      const host = createMockHost({
-        renderer: testRenderer.renderer,
-        usage: {
-          ...base,
-          rolling: { ...base.rolling, percent: 100, limited: true },
-        },
-        options: { mode: "compact" },
-      });
-      const cleanup = await mountHost(host);
-      await testRenderer.flush();
-
-      const lines = nonEmptyLines(testRenderer.captureCharFrame());
-      expect(lines).toHaveLength(2);
-      expect(lines[1]).toBe("5-hour ✖ limit reached");
-      const spans = testRenderer.captureSpans();
-      expect(spanColor(spans, "5-hour")).toBe("#c9d1d9");
-      expect(spanColor(spans, "✖ limit reached")).toBe("#f85149");
-      cleanup();
-    } finally {
-      await testRenderer.dispose();
-    }
-  });
-
-  test("keeps unavailable, request-error, and loading states distinct in two rows", async () => {
-    const unavailableRenderer = await createTestRenderer({
-      width: 64,
-      height: 6,
-    });
-    const errorRenderer = await createTestRenderer({ width: 64, height: 6 });
-    const loadingRenderer = await createTestRenderer({ width: 64, height: 6 });
-    try {
-      const unavailableHost = createMockHost({
-        renderer: unavailableRenderer.renderer,
-        unavailable: true,
-        options: { mode: "compact" },
-      });
-      const unavailableCleanup = await mountHost(unavailableHost);
-      await unavailableRenderer.flush();
-      const unavailableLines = nonEmptyLines(
-        unavailableRenderer.captureCharFrame(),
-      );
-      expect(unavailableLines).toHaveLength(2);
-      expect(unavailableLines[0]).toContain("–");
-      expect(unavailableLines[0]).not.toContain("Monthly");
-      expect(unavailableLines[1]).toContain("– Go usage unavailable");
-      expect(unavailableLines[1]).not.toContain("error");
-      expect(unavailableLines.join("\n")).not.toContain("●");
-
-      const errorHost = createMockHost({
-        renderer: errorRenderer.renderer,
-        failure: new Error("limits endpoint offline"),
-        options: { mode: "compact" },
-      });
-      const errorCleanup = await mountHost(errorHost);
-      await errorRenderer.flush();
-      const errorLines = nonEmptyLines(errorRenderer.captureCharFrame());
-      expect(errorLines).toHaveLength(2);
-      expect(errorLines[0]).toContain("✖");
-      expect(errorLines[0]).not.toContain("Monthly");
-      expect(errorLines[1]).toContain("✖ error");
-      expect(errorLines[1]).toContain("limits endpoint offline");
-      expect(errorLines[1]).not.toContain("unavailable");
-      expect(errorLines.join("\n")).not.toContain("●");
-
-      const loadingHost = createMockHost({
-        renderer: loadingRenderer.renderer,
-        hang: true,
-        options: { mode: "compact" },
-      });
-      const loadingCleanup = await mountHost(loadingHost);
-      await loadingRenderer.flush();
-      const loadingLines = nonEmptyLines(loadingRenderer.captureCharFrame());
-      expect(loadingLines).toHaveLength(2);
-      expect(loadingLines[0]).toContain("…");
-      expect(loadingLines[0]).not.toContain("Monthly");
-      expect(loadingLines[1]).toContain("… loading limits");
-      expect(loadingLines[1]).not.toContain("unavailable");
-      expect(loadingLines[1]).not.toContain("error");
-      expect(loadingLines.join("\n")).not.toContain("●");
-
-      loadingCleanup();
-      errorCleanup();
-      unavailableCleanup();
-    } finally {
-      await unavailableRenderer.dispose();
-      await errorRenderer.dispose();
-      await loadingRenderer.dispose();
-    }
-  });
-});
-
-describe("pace mode", () => {
   test("renders the four-row pace view when mode is not configured", async () => {
     const testRenderer = await createTestRenderer({ width: 64, height: 6 });
     const fixedNow = new Date(2026, 10, 27, 12, 45, 0, 0).getTime();
@@ -605,7 +382,7 @@ describe("pace mode", () => {
 
       const lines = nonEmptyLines(testRenderer.captureCharFrame());
       expect(lines).toHaveLength(4);
-      expect(lines[0]).toBe("OpenCode Go");
+      expect(lines[0]).toMatch(/^OpenCode Go\s+pace$/);
       expect(lines[1]).toContain("5-hour");
       expect(lines[1]).toMatch(/ 25%$/);
       expect(lines[2]).toContain("Weekly");
@@ -642,7 +419,7 @@ describe("pace mode", () => {
 
       const lines = nonEmptyLines(testRenderer.captureCharFrame());
       expect(lines).toHaveLength(4);
-      expect(lines[0]).toBe("OpenCode Go");
+      expect(lines[0]).toMatch(/^OpenCode Go\s+pace$/);
       expect(lines[1]).toContain("5-hour");
       expect(lines[1]).toMatch(/ 25%$/);
       expect(lines[2]).toContain("Weekly");
@@ -741,7 +518,7 @@ describe("pace mode", () => {
 
       const lines = nonEmptyLines(testRenderer.captureCharFrame());
       expect(lines).toHaveLength(4);
-      expect(lines[0]).toBe("OpenCode Go");
+      expect(lines[0]).toMatch(/^OpenCode Go\s+pace$/);
       expect(lines[3]).toContain("Monthly");
       expect(lines[3]).toMatch(/100%$/);
       expect(lines[3]).not.toContain("✖");
@@ -778,7 +555,7 @@ describe("pace mode", () => {
       const loadingCleanup = await mountHost(loadingHost);
       await loadingRenderer.flush();
       expect(nonEmptyLines(loadingRenderer.captureCharFrame())).toEqual([
-        "OpenCode Go",
+        expect.stringMatching(/^OpenCode Go\s+pace$/),
         "… loading limits",
       ]);
 
@@ -790,7 +567,7 @@ describe("pace mode", () => {
       const unavailableCleanup = await mountHost(unavailableHost);
       await unavailableRenderer.flush();
       expect(nonEmptyLines(unavailableRenderer.captureCharFrame())).toEqual([
-        "OpenCode Go",
+        expect.stringMatching(/^OpenCode Go\s+pace$/),
         "– Go usage unavailable",
       ]);
 
@@ -802,7 +579,7 @@ describe("pace mode", () => {
       const errorCleanup = await mountHost(errorHost);
       await errorRenderer.flush();
       expect(nonEmptyLines(errorRenderer.captureCharFrame())).toEqual([
-        "OpenCode Go",
+        expect.stringMatching(/^OpenCode Go\s+pace$/),
         "✖ error · limits endpoint offline",
       ]);
 

@@ -21,7 +21,7 @@ export type RunoutEstimate =
   | { kind: "reached" }
   | { kind: "estimate"; inMs: number };
 
-/** Format a projected limit date for the compact sidebar warning. */
+/** Format a projected limit date for a short-window status warning. */
 export function formatRunoutDate(
   limit: LimitName,
   projection: RunoutEstimate,
