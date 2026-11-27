@@ -40,7 +40,11 @@ interface DemoScenario {
   readonly usage: ReturnType<typeof usageAt>;
   readonly output: string;
   readonly title: string;
-  readonly validate: (lines: readonly string[], charFrame: string) => void;
+  readonly validate: (
+    lines: readonly string[],
+    charFrame: string,
+    captured: CapturedFrame,
+  ) => void;
 }
 
 const compactBase = usageAt(FIXED_NOW, {
@@ -134,6 +138,7 @@ const SCENARIOS: readonly DemoScenario[] = [
     },
   },
   {
+    // Pace: rolling is behind pace, weekly is ahead, monthly is limited.
     mode: "pace",
     width: 64,
     height: 4,
@@ -144,7 +149,7 @@ const SCENARIOS: readonly DemoScenario[] = [
     output: join(import.meta.dir, "pace.svg"),
     title:
       "OpenCode Go pace sidebar showing behind-pace, ahead-of-pace, and critical monthly bars",
-    validate(lines, charFrame) {
+    validate(lines, charFrame, captured) {
       const visible = lines.join("\n");
       if (
         lines.length !== 3 ||
@@ -162,6 +167,20 @@ const SCENARIOS: readonly DemoScenario[] = [
         throw new Error(
           `[pace] Unexpected pace rows: ${JSON.stringify(lines)} (frame: ${JSON.stringify(charFrame)})`,
         );
+      }
+
+      // The composite bars must exercise every semantic fixture color.
+      const fills = new Set(
+        captured.lines.flatMap((line) =>
+          line.spans.map((span) => hexColor(span.fg)),
+        ),
+      );
+      for (const color of ["#3fb950", "#8b949e", "#d29922", "#f85149"]) {
+        if (!fills.has(color)) {
+          throw new Error(
+            `[pace] Expected the fixture palette color ${color} in: ${JSON.stringify([...fills])}`,
+          );
+        }
       }
     },
   },
@@ -466,7 +485,11 @@ async function main(): Promise<void> {
 
         const charFrame = setup.captureCharFrame();
         captured = setup.captureSpans();
-        scenario.validate(drawableLines(captured).map(lineText), charFrame);
+        scenario.validate(
+          drawableLines(captured).map(lineText),
+          charFrame,
+          captured,
+        );
         if (hasBoldTitle(captured) === false) {
           throw new Error(
             `[${scenario.mode}] Expected the OpenCode Go title span to be bold`,
