@@ -10,7 +10,7 @@ export interface LimitDescriptor {
 
 /** Display order for the three Go meters, most urgent window first. */
 export const LIMITS: readonly LimitDescriptor[] = [
-  { id: "rolling", label: "5-hour window" },
+  { id: "rolling", label: "5-hour" },
   { id: "weekly", label: "Weekly" },
   { id: "monthly", label: "Monthly" },
 ];

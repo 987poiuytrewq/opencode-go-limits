@@ -269,7 +269,7 @@ describe("pace rows", () => {
       "monthly",
     ]);
     expect(rows.map((row) => row.label.trim())).toEqual([
-      "5-hour window",
+      "5-hour",
       "Weekly",
       "Monthly",
     ]);

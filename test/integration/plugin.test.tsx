@@ -79,7 +79,8 @@ describe("OpenCode Go limits sidebar plugin", () => {
 
       const frame = testRenderer.captureCharFrame();
       expect(frame).toContain("OpenCode Go");
-      expect(frame).toContain("5-hour window");
+      expect(frame).toContain("5-hour");
+      expect(frame).not.toContain("5-hour window");
       expect(frame).toContain("Weekly");
       expect(frame).toContain("Monthly");
       expect(frame).toContain("25% ");
@@ -261,7 +262,8 @@ describe("compact mode", () => {
 
       const lines = nonEmptyLines(testRenderer.captureCharFrame());
       expect(lines.length).toBeGreaterThan(2);
-      expect(testRenderer.captureCharFrame()).toContain("5-hour window");
+      expect(testRenderer.captureCharFrame()).toContain("5-hour");
+      expect(testRenderer.captureCharFrame()).not.toContain("5-hour window");
       expect(testRenderer.captureCharFrame()).toContain("━━");
       cleanup();
     } finally {
@@ -269,7 +271,7 @@ describe("compact mode", () => {
     }
   });
 
-  test("renders a monthly summary and the most urgent short-window warning on two rows", async () => {
+  test("renders a right-aligned monthly percentage and the most urgent short-window warning on two rows", async () => {
     const testRenderer = await createTestRenderer({ width: 64, height: 6 });
     const fixedNow = new Date(2026, 10, 27, 12, 45, 0, 0).getTime();
     const nowSpy = spyOn(Date, "now").mockReturnValue(fixedNow);
@@ -292,14 +294,12 @@ describe("compact mode", () => {
 
       const lines = nonEmptyLines(testRenderer.captureCharFrame());
       expect(lines).toHaveLength(2);
-      expect(lines[0]).toContain("OpenCode Go");
-      expect(lines[0]).toContain("66%");
-      expect(lines[0]).not.toContain("Monthly");
-      expect(lines[0]).not.toContain("⚠");
-      expect(lines[1]).toBe("5-hour window  ⚠ 14:15");
+      expect(lines[0]?.trim()).toBe("66%");
+      expect(lines[0]?.startsWith(" ")).toBe(true);
+      expect(lines[1]).toBe("5-hour  ⚠ 14:15");
       const spans = testRenderer.captureSpans();
       expect(spanColor(spans, "66%")).toBe("#3fb950");
-      expect(spanColor(spans, "5-hour window")).toBe("#c9d1d9");
+      expect(spanColor(spans, "5-hour")).toBe("#c9d1d9");
       expect(spanColor(spans, "⚠ 14:15")).toBe("#d29922");
       cleanup();
     } finally {
@@ -321,10 +321,10 @@ describe("compact mode", () => {
 
       const lines = nonEmptyLines(testRenderer.captureCharFrame());
       expect(lines).toHaveLength(2);
-      expect(lines[0]).toContain("80%  ⚠");
+      expect(lines[0]?.trim()).toBe("80%");
       expect(lines[1]).toContain("Weekly ✓ resets 1d");
       const spans = testRenderer.captureSpans();
-      expect(spanColor(spans, "80%  ⚠")).toBe("#d29922");
+      expect(spanColor(spans, "80%")).toBe("#d29922");
       expect(spanColor(spans, "Weekly")).toBe("#c9d1d9");
       expect(spanColor(spans, "✓ resets 1d")).toBe("#3fb950");
       cleanup();
@@ -351,8 +351,33 @@ describe("compact mode", () => {
 
       const lines = nonEmptyLines(testRenderer.captureCharFrame());
       expect(lines).toHaveLength(2);
-      expect(lines[0]).toContain("100% ✖");
-      expect(spanColor(testRenderer.captureSpans(), "100% ✖")).toBe("#f85149");
+      expect(lines[0]?.trim()).toBe("100%");
+      expect(spanColor(testRenderer.captureSpans(), "100%")).toBe("#f85149");
+      cleanup();
+    } finally {
+      await testRenderer.dispose();
+    }
+  });
+
+  test("colors a limited monthly meter red even below 100%", async () => {
+    const testRenderer = await createTestRenderer({ width: 64, height: 6 });
+    try {
+      const base = usageAt(Date.now());
+      const host = createMockHost({
+        renderer: testRenderer.renderer,
+        usage: {
+          ...base,
+          monthly: { ...base.monthly, percent: 20, limited: true },
+        },
+        options: { mode: "compact" },
+      });
+      const cleanup = await mountHost(host);
+      await testRenderer.flush();
+
+      const lines = nonEmptyLines(testRenderer.captureCharFrame());
+      expect(lines).toHaveLength(2);
+      expect(lines[0]?.trim()).toBe("20%");
+      expect(spanColor(testRenderer.captureSpans(), "20%")).toBe("#f85149");
       cleanup();
     } finally {
       await testRenderer.dispose();
@@ -376,9 +401,9 @@ describe("compact mode", () => {
 
       const lines = nonEmptyLines(testRenderer.captureCharFrame());
       expect(lines).toHaveLength(2);
-      expect(lines[1]).toBe("5-hour window ✖ limit reached");
+      expect(lines[1]).toBe("5-hour ✖ limit reached");
       const spans = testRenderer.captureSpans();
-      expect(spanColor(spans, "5-hour window")).toBe("#c9d1d9");
+      expect(spanColor(spans, "5-hour")).toBe("#c9d1d9");
       expect(spanColor(spans, "✖ limit reached")).toBe("#f85149");
       cleanup();
     } finally {
@@ -467,7 +492,7 @@ describe("pace mode", () => {
 
       const lines = nonEmptyLines(testRenderer.captureCharFrame());
       expect(lines).toHaveLength(3);
-      expect(lines[0]).toContain("5-hour window");
+      expect(lines[0]).toContain("5-hour");
       expect(lines[0]).toContain("25% ");
       expect(lines[1]).toContain("Weekly");
       expect(lines[1]).toContain("95% ");
@@ -480,7 +505,7 @@ describe("pace mode", () => {
       expect(spanColor(spans, "95% ")).toBe("#d29922");
       expect(spanColor(spans, "66% ")).toBe("#3fb950");
 
-      const rollingColors = thickColors(lineSpans(spans, "5-hour window"));
+      const rollingColors = thickColors(lineSpans(spans, "5-hour"));
       expect(rollingColors).toContain("#3fb950");
       expect(rollingColors).toContain("#8b949e");
       expect(rollingColors).not.toContain("#d29922");

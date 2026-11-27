@@ -49,13 +49,13 @@ describe("monthly compact summary", () => {
     expect(rows.summary).toEqual({ text: "66%", tone: "ok" });
   });
 
-  test("marks an approaching monthly value with two spaces and a warning", () => {
+  test("marks an approaching monthly value with the warning tone only", () => {
     const status = selectMonthlyStatus(usage([10, 20, 85]), NOW);
 
     expect(status.severity).toBe("warning");
-    expect(formatCompactMonthly(status)).toBe("85%  ⚠");
+    expect(formatCompactMonthly(status)).toBe("85%");
     expect(formatCompactStatus(usage([10, 20, 85]), NOW).summary).toEqual({
-      text: "85%  ⚠",
+      text: "85%",
       tone: "warning",
     });
   });
@@ -68,13 +68,13 @@ describe("monthly compact summary", () => {
 
     expect(status.projection.kind).toBe("estimate");
     expect(status.severity).toBe("warning");
-    expect(formatCompactMonthly(status)).toBe("66%  ⚠");
+    expect(formatCompactMonthly(status)).toBe("66%");
   });
 
   test("marks an exhausted or API-limited monthly value as critical", () => {
     expect(
       formatCompactMonthly(selectMonthlyStatus(usage([10, 20, 150]), NOW)),
-    ).toBe("100% ✖");
+    ).toBe("100%");
 
     expect(
       formatCompactMonthly(
@@ -83,7 +83,17 @@ describe("monthly compact summary", () => {
           NOW,
         ),
       ),
-    ).toBe("20% ✖");
+    ).toBe("20%");
+  });
+
+  test("keeps the populated first row to a bare percentage", () => {
+    const rows = formatCompactStatus(usage([10, 20, 85]), NOW);
+
+    expect(rows.summary.text).toBe("85%");
+    expect(rows.summary.text).not.toContain("OpenCode Go");
+    expect(rows.summary.text).not.toContain("Monthly");
+    expect(rows.summary.text).not.toContain("⚠");
+    expect(rows.summary.text).not.toContain("✖");
   });
 });
 
@@ -99,13 +109,11 @@ describe("short-window compact row", () => {
     expect(status.limit).toBe("rolling");
     expect(status.severity).toBe("warning");
     expect(status.projection.kind).toBe("estimate");
-    expect(formatCompactShortWindow(status, NOW)).toBe(
-      "5-hour window  ⚠ 14:15",
-    );
+    expect(formatCompactShortWindow(status, NOW)).toBe("5-hour  ⚠ 14:15");
     expect(rows.detail).toEqual({
-      text: "5-hour window  ⚠ 14:15",
+      text: "5-hour  ⚠ 14:15",
       tone: "warning",
-      label: "5-hour window",
+      label: "5-hour",
       status: "  ⚠ 14:15",
     });
   });
@@ -129,7 +137,7 @@ describe("short-window compact row", () => {
     expect(status.severity).toBe("critical");
     expect(status.limit).toBe("rolling");
     expect(formatCompactShortWindow(status, NOW)).toBe(
-      "5-hour window ✖ limit reached",
+      "5-hour ✖ limit reached",
     );
   });
 
@@ -152,9 +160,7 @@ describe("short-window compact row", () => {
 
     expect(status.severity).toBe("warning");
     expect(status.limit).toBe("rolling");
-    expect(formatCompactShortWindow(status, NOW)).toBe(
-      "5-hour window  ⚠ 13:15",
-    );
+    expect(formatCompactShortWindow(status, NOW)).toBe("5-hour  ⚠ 13:15");
   });
 
   test("prefers a projected warning over a higher-percent static warning", () => {

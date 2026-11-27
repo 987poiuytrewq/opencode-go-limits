@@ -71,7 +71,7 @@ const SCENARIOS: readonly DemoScenario[] = [
     usage: expandedBase,
     output: join(import.meta.dir, "expanded.svg"),
     title:
-      "OpenCode Go expanded sidebar showing the 5-hour window, Weekly, and Monthly meters",
+      "OpenCode Go expanded sidebar showing the 5-hour, Weekly, and Monthly meters",
     validate(lines, charFrame) {
       if (lines.length !== 7) {
         throw new Error(
@@ -81,7 +81,7 @@ const SCENARIOS: readonly DemoScenario[] = [
       const visible = lines.join("\n");
       for (const needle of [
         "OpenCode Go",
-        "5-hour window",
+        "5-hour",
         "25% ",
         "Weekly",
         "50% ",
@@ -120,16 +120,18 @@ const SCENARIOS: readonly DemoScenario[] = [
     },
     output: join(import.meta.dir, "compact.svg"),
     title:
-      "OpenCode Go compact sidebar with a monthly summary and a projected 5-hour runout",
+      "OpenCode Go compact sidebar with a right-aligned monthly percentage and a projected 5-hour runout",
     validate(lines, charFrame) {
       if (
         lines.length !== 2 ||
-        !lines[0]?.startsWith("OpenCode Go") ||
+        lines[0]?.trim() !== "66%" ||
+        !lines[0]?.startsWith(" ") ||
         !lines[0]?.endsWith("66%") ||
-        lines[1] !== "5-hour window  ⚠ 14:15" ||
-        !charFrame.includes("OpenCode Go") ||
+        lines[0]?.includes("OpenCode Go") ||
+        lines[1] !== "5-hour  ⚠ 14:15" ||
         !charFrame.includes("66%") ||
-        !charFrame.includes("5-hour window  ⚠ 14:15")
+        !charFrame.includes("5-hour  ⚠ 14:15") ||
+        charFrame.includes("OpenCode Go")
       ) {
         throw new Error(
           `[compact] Unexpected compact rows: ${JSON.stringify(lines)} (frame: ${JSON.stringify(charFrame)})`,
@@ -153,7 +155,7 @@ const SCENARIOS: readonly DemoScenario[] = [
       const visible = lines.join("\n");
       if (
         lines.length !== 3 ||
-        !lines[0]?.startsWith("5-hour window") ||
+        !lines[0]?.startsWith("5-hour") ||
         !lines[1]?.startsWith("Weekly") ||
         !lines[2]?.startsWith("Monthly") ||
         !visible.includes("25% ") ||

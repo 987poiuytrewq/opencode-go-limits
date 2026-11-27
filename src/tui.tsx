@@ -2,7 +2,6 @@ import { For, Show, createSignal, onCleanup, onMount } from "solid-js";
 import { TextAttributes } from "@opentui/core";
 import { Plugin, usePlugin } from "@opencode/plugin/tui";
 import {
-  compactTitle,
   formatCompactError,
   formatCompactLoading,
   formatCompactStatus,
@@ -276,13 +275,10 @@ function QuotaWidget(props: { refreshMs: number; mode: SidebarMode }) {
       <Show when={props.mode === "compact"}>
         <box
           flexDirection="row"
-          justifyContent="space-between"
+          justifyContent="flex-end"
           alignItems="center"
           width="100%"
         >
-          <text fg={context.theme.text.base} attributes={TextAttributes.BOLD}>
-            {compactTitle()}
-          </text>
           <text fg={toneColor(compactRows().summary.tone)}>
             {compactRows().summary.text}
           </text>

@@ -20,35 +20,34 @@ display API keys, token spend, or billing details.
 
 Expanded mode (the default) shows all three Go meters:
 
-![OpenCode Go expanded sidebar showing the 5-hour window at 25%, Weekly at 50%, and Monthly at 66%](demo/expanded.svg)
+![OpenCode Go expanded sidebar showing the 5-hour at 25%, Weekly at 50%, and Monthly at 66%](demo/expanded.svg)
 
 *Expanded mode, captured from the real OpenTUI renderer with deterministic fake usage data.*
 
 Compact mode reduces the panel to two rows:
 
-![OpenCode Go compact sidebar showing 66% for the monthly meter and a 5-hour window projected runout at 14:15](demo/compact.svg)
+![OpenCode Go compact sidebar showing a right-aligned 66% monthly percentage and a 5-hour projected runout at 14:15](demo/compact.svg)
 
 *Compact mode, captured from deterministic fake usage data.*
 
 Pace mode compares each meter with the elapsed portion of its window on one
 composite bar:
 
-![OpenCode Go pace sidebar with a behind-pace 5-hour window, an ahead-of-pace weekly meter, and a critical monthly meter at 100%](demo/pace.svg)
+![OpenCode Go pace sidebar with a behind-pace 5-hour, an ahead-of-pace weekly meter, and a critical monthly meter at 100%](demo/pace.svg)
 
 *Pace mode, captured from deterministic fake usage data.*
 
 ## Features
 
-- **All three Go meters** in one sidebar panel: 5-hour window, weekly, and
-  monthly.
+- **All three Go meters** in one sidebar panel: 5-hour, weekly, and monthly.
 - **Usage at a glance:** percentage used, a responsive `━` / `─` progress bar,
   and a compact reset countdown.
 - **Runout warnings** projected from average usage since the current window
   began.
 - **Theme-aware colors:** success, warning, and error colors from the active
   OpenCode theme.
-- **Optional compact mode** that collapses the panel to two rows: a monthly
-  summary and the most urgent short-window meter.
+- **Optional compact mode** that collapses the panel to two rows: a right-aligned
+  monthly percentage and the most urgent short-window meter.
 - **Optional pace mode** that shows one composite bar per meter, comparing
   usage with the elapsed portion of the 5-hour, weekly, or monthly window.
 - **Configurable refresh cadence** with safe bounds, so a typo in the config
@@ -161,26 +160,27 @@ up a queue of requests. The plugin has no manual refresh command; if you change
 
 ### Compact mode
 
-Set `"mode": "compact"` to reduce the panel to two rows. The first row keeps the
-`OpenCode Go` title on the left and always summarizes the monthly meter on the
-right as a bare percentage; the title supplies the monthly context. The second
-row shows the most urgent short-window meter (5-hour window or weekly), with its
-status symbol and either a projected runout or reset detail:
+Set `"mode": "compact"` to reduce the panel to two rows. The first row is a
+right-aligned monthly percentage and nothing else: while usage data is
+available it has no title, no `Monthly` label, and no status symbol. The second
+row shows the most urgent short-window meter (5-hour or weekly), with its status
+symbol and either a projected runout or reset detail:
 
 ```text
-OpenCode Go                              66%
-5-hour window  ⚠ 14:15
+                                                             66%
+5-hour  ⚠ 14:15
 ```
 
 The monthly percentage uses the theme's success color when the month is
-healthy. When the monthly meter is approaching its limit (80% or more, or
-projected to run out before it resets), the value carries `⚠` and the theme's
-warning color. When it is exhausted or marked limited by the API, it carries
-`✖` and the theme's error color:
+healthy, its warning color when the monthly meter is approaching its limit (80%
+or more, or projected to run out before it resets), and its error color when it
+is exhausted or marked limited by the API, including limited usage below 100%.
+Severity on this row is conveyed by color only, so the value stays a bare
+percentage:
 
 ```text
-OpenCode Go                              85%  ⚠
-OpenCode Go                              100% ✖
+                                                             85%
+                                                            100%
 ```
 
 The second row selects only the 5-hour and weekly meters, using the same urgency
@@ -191,7 +191,7 @@ order as expanded mode:
   highest percentage wins.
 - **`⚠` (warning):** a meter at 80% or more, or one projected to run out before
   it resets. The row shows the projected runout time (for example,
-  `5-hour window  ⚠ 14:15`) or the reset countdown when there is no projection.
+  `5-hour  ⚠ 14:15`) or the reset countdown when there is no projection.
   Among warnings, the earliest projected runout wins; when no warning has a
   projection, the highest percentage wins.
 - **`✓` (healthy):** neither short-window meter is urgent. The row reads
@@ -205,13 +205,13 @@ text, and theme color always agree, so the mode is readable without color.
 Compact mode keeps its other states in two distinct rows as well:
 
 ```text
-OpenCode Go                              …
+                                                               …
 … loading limits
 
-OpenCode Go                              –
+                                                               –
 – Go usage unavailable
 
-OpenCode Go                              ✖
+                                                               ✖
 ✖ error · limits endpoint offline
 ```
 
@@ -226,7 +226,7 @@ shows the meter label, the percentage used, and one composite bar that compares
 usage with how much of the window has elapsed:
 
 ```text
-5-hour window 25% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━─────────
+5-hour        25% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━─────────
 Weekly        95% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━──
 Monthly       100%  ✖ limit reached ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
@@ -240,7 +240,7 @@ The bar has four segment roles:
   when you are ahead of pace.
 - **Empty (`─`):** the remainder of the window.
 
-In the sample, the 5-hour window is behind pace, so its bar is green up to 25%
+In the sample, the 5-hour meter is behind pace, so its bar is green up to 25%
 and muted thick through the 80% elapsed mark. The weekly meter is ahead of pace
 at 95% against roughly 86% elapsed, so green runs to the pace line and yellow
 covers the over-pace usage. Monthly is limited, so its entire used segment is
@@ -252,7 +252,7 @@ deterministic behind/ahead/critical fake dataset.
 Elapsed percentage is inferred from the same reset timestamps used by runout
 estimates:
 
-- **5-hour window:** reset minus 5 hours.
+- **5-hour:** reset minus 5 hours.
 - **Weekly:** reset minus 7 days.
 - **Monthly:** the same UTC day and time in the previous calendar month,
   clamped to that month's final day. This is **approximate**: Go resets the
@@ -274,7 +274,7 @@ sidebar if a critical status does not fit.
 The default `expanded` mode shows each meter on two lines:
 
 ```text
-5-hour window               4h 42m
+5-hour                      4h 42m
 25% ━━━━━━━━──────────────────────
 Weekly                      5d 13h
 50% ━━━━━━━━━━━━━━━───────────────
@@ -297,7 +297,7 @@ Monthly                         7d
 
 | Meter | Warning format | Example |
 | --- | --- | --- |
-| 5-hour window | Local time, rounded to the nearest 15 minutes | `⚠ 10:45` |
+| 5-hour | Local time, rounded to the nearest 15 minutes | `⚠ 10:45` |
 | Weekly | Local weekday and 24-hour time, rounded to the nearest hour | `⚠ Sat 20:00` |
 | Monthly | Short UTC date | `⚠ Dec 2` |
 
@@ -312,7 +312,7 @@ projected time to empty = elapsed time in window × (100 − percent) / percent
 
 The window start is inferred from the reset time:
 
-- **5-hour window:** reset time minus 5 hours.
+- **5-hour:** reset time minus 5 hours.
 - **Weekly:** reset time minus 7 days.
 - **Monthly:** the same UTC day and time in the previous calendar month,
   clamped to the last day of that month.
