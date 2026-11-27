@@ -49,7 +49,12 @@ export function formatRunoutDate(
     const weekday = new Intl.DateTimeFormat("en-US", {
       weekday: "short",
     }).format(date);
-    const time = `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+    // h23 keeps midnight at 00:00; h24 would render it as 24:00.
+    const time = new Intl.DateTimeFormat("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    }).format(date);
     return `${weekday} ${time}`;
   }
 

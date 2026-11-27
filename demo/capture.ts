@@ -143,6 +143,7 @@ const LINE_HEIGHT = 22;
 
 interface FrozenGlobals {
   readonly original: {
+    readonly date: DateConstructor;
     readonly now: typeof Date.now;
     readonly setInterval: typeof globalThis.setInterval;
     readonly clearInterval: typeof globalThis.clearInterval;
@@ -167,16 +168,32 @@ interface RenderedLine {
   readonly endColumn: number;
 }
 
-/** Freeze `Date.now` and capture the plugin's refresh timer instead of running it. */
+/**
+ * Freeze the clock and capture the plugin's refresh timer instead of running
+ * it. `new Date()` must be frozen too: reset countdowns default to the current
+ * wall-clock time, so leaving it live would make the screenshot drift.
+ */
 function freezeGlobals(): FrozenGlobals {
+  const realDate = globalThis.Date;
   const original = {
-    now: Date.now,
+    date: realDate,
+    now: realDate.now,
     setInterval: globalThis.setInterval,
     clearInterval: globalThis.clearInterval,
   };
   const timers = new Set<TimerHandle>();
 
-  Date.now = () => FIXED_NOW;
+  realDate.now = () => FIXED_NOW;
+  globalThis.Date = new Proxy(realDate, {
+    construct(target, args) {
+      return args.length === 0
+        ? new target(FIXED_NOW)
+        : Reflect.construct(target, args);
+    },
+    apply(target) {
+      return Reflect.apply(target, undefined, [FIXED_NOW]);
+    },
+  }) as unknown as DateConstructor;
   globalThis.setInterval = ((callback: () => void, delayMs?: number) => {
     const handle: TimerHandle = { callback, delayMs: delayMs ?? 0 };
     timers.add(handle);
@@ -190,7 +207,8 @@ function freezeGlobals(): FrozenGlobals {
     original,
     timers,
     restore() {
-      Date.now = original.now;
+      globalThis.Date = original.date;
+      original.date.now = original.now;
       globalThis.setInterval = original.setInterval;
       globalThis.clearInterval = original.clearInterval;
     },

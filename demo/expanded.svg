@@ -2,7 +2,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="672" height="300" viewBox="0 0 672 300" role="img" aria-labelledby="demo-title demo-desc">
   <title id="demo-title">OpenCode Go expanded sidebar showing the 5-hour window, Weekly, and Monthly meters</title>
   <desc id="demo-desc">Terminal-style screenshot of the OpenCode Go sidebar in expanded mode, captured from a 64 by 14 character frame rendered with fake usage data. The 7 visible rows read: OpenCode Go
-5-hour window                                             1h 15m
+5-hour window                                              1h 0m
 25% ━━━━━━━━━━━━━━━─────────────────────────────────────────────
 Weekly                                                        1d
 50% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━──────────────────────────────
@@ -25,7 +25,7 @@ Monthly                                                       7d
     <text x="92" y="36" fill="#c9d1d9" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="11">OpenCode — session sidebar (expanded)</text>
     <text x="48" y="86" fill="#ffffff" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">OpenCode Go</text>
     <text x="48" y="108" fill="#ffffff" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">5-hour window</text>
-    <text x="570" y="108" fill="#808080" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">1h 15m</text>
+    <text x="579" y="108" fill="#808080" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">1h 0m</text>
     <text x="48" y="130" fill="#00ff00" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">25% ━━━━━━━━━━━━━━━</text>
     <text x="219" y="130" fill="#808080" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">─────────────────────────────────────────────</text>
     <text x="48" y="152" fill="#ffffff" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">Weekly</text>
