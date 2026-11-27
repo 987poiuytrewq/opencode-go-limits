@@ -11,7 +11,7 @@ describe("plugin settings", () => {
   test("uses the one-minute default when options are absent", () => {
     expect(pluginSettings(undefined)).toEqual({
       refreshMs: 60_000,
-      mode: "expanded",
+      mode: "pace",
     });
     expect(pluginSettings(null)).toEqual({
       refreshMs: DEFAULT_REFRESH_MS,
@@ -101,9 +101,9 @@ describe("plugin settings", () => {
     });
   });
 
-  test("uses expanded mode by default and keeps an explicit expanded mode", () => {
-    expect(DEFAULT_MODE).toBe("expanded");
-    expect(pluginSettings({})).toMatchObject({ mode: "expanded" });
+  test("uses pace mode by default and keeps an explicit expanded mode", () => {
+    expect(DEFAULT_MODE).toBe("pace");
+    expect(pluginSettings({})).toMatchObject({ mode: "pace" });
     expect(pluginSettings({ mode: "expanded" })).toMatchObject({
       mode: "expanded",
     });
@@ -127,7 +127,7 @@ describe("plugin settings", () => {
     });
   });
 
-  test("falls back to expanded for invalid mode values", () => {
+  test("falls back to pace for invalid mode values", () => {
     expect(pluginSettings({ mode: "COMPACT" })).toMatchObject({
       mode: DEFAULT_MODE,
     });
