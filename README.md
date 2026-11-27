@@ -180,18 +180,18 @@ right edge:
 
 ```text
 OpenCode Go
-5-hour        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━───────── 25%
-Weekly        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━── 95%
-Monthly       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━100%
+5-hour  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━────────── 25%
+Weekly  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━─── 95%
+Monthly ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━100%
 ```
 
 Set `"mode": "pace"` explicitly if you prefer a self-documenting config.
 
-Every row reserves the same label column and the same four-character percentage
-field, so all three bars start and end on the same columns and every percentage
-is right-aligned as `  5%`, ` 25%`, or `100%`. At the 64-column sidebar width used
-by the sample, the label column is 14 cells, the bar is 46 cells, and the
-percentage field is 4 cells.
+Every row reserves a label column wide enough for `Monthly` plus one separator,
+and the same four-character percentage field, so all three bars start and end
+on the same columns and every percentage is right-aligned as `  5%`, ` 25%`, or
+`100%`. At the 64-column sidebar width used by the sample, the label takes 8
+cells, the bar takes 52 cells, and the percentage field takes 4 cells.
 
 The bar has four segment roles:
 

@@ -3,8 +3,10 @@ import { LIMITS, windowStart, type GoUsage, type LimitName } from "./usage";
 /** Tone used for a pace row's percentage. */
 export type PaceTone = "success" | "warning" | "critical";
 
-/** Fixed label column so the three pace bars start at the same offset. */
-export const PACE_LABEL_WIDTH = 13;
+/** Widest meter label; only this width is reserved before the pace bars. */
+export const PACE_LABEL_WIDTH = Math.max(
+  ...LIMITS.map(({ label }) => label.length),
+);
 
 /** Width of the right-aligned percentage column at the row's right edge. */
 export const PACE_PERCENT_WIDTH = 4;
