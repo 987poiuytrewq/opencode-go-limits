@@ -256,6 +256,8 @@ async function main(): Promise<void> {
   const frozen = freezeGlobals();
   let setup: TestRendererSetup | undefined;
   let release: (() => void) | undefined;
+  let failure: unknown;
+  let failed = false;
 
   try {
     const { createTestRenderer } = await import("@opentui/core/testing");
@@ -326,14 +328,16 @@ async function main(): Promise<void> {
 
     await writeFile(OUTPUT_PATH, buildSvg(captured), "utf8");
 
-    release?.();
+    const releaseClaim = release;
     release = undefined;
+    releaseClaim?.();
     if (host.released !== 1 || host.claims.length !== 0) {
       throw new Error("Plugin slot claim was not released during cleanup");
     }
 
-    await setup.dispose();
+    const activeSetup = setup;
     setup = undefined;
+    await activeSetup.dispose();
 
     if (frozen.timers.size > 0) {
       throw new Error(
@@ -349,11 +353,38 @@ async function main(): Promise<void> {
 
     console.log(`Wrote ${OUTPUT_PATH}`);
     console.log(visible);
+  } catch (error) {
+    failure = error;
+    failed = true;
   } finally {
-    release?.();
-    if (setup) await setup.dispose();
-    frozen.restore();
+    let cleanupFailure: unknown;
+    let cleanupFailed = false;
+
+    try {
+      try {
+        release?.();
+      } finally {
+        if (setup) {
+          try {
+            await setup.dispose();
+          } catch (error) {
+            cleanupFailure = error;
+            cleanupFailed = true;
+          }
+        }
+      }
+    } catch (error) {
+      cleanupFailure = error;
+      cleanupFailed = true;
+    } finally {
+      frozen.restore();
+    }
+
+    // Keep the primary failure, but surface a cleanup failure when the capture
+    // itself succeeded.
+    if (!failed && cleanupFailed) throw cleanupFailure;
   }
+  if (failed) throw failure;
 }
 
 await main();
