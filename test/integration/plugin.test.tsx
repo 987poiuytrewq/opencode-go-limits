@@ -564,6 +564,39 @@ describe("pace mode", () => {
     }
   });
 
+  test("right-aligns 1-, 2-, and 3-digit pace percentages on one bar column", async () => {
+    const testRenderer = await createTestRenderer({ width: 64, height: 6 });
+    const fixedNow = new Date(2026, 10, 27, 12, 45, 0, 0).getTime();
+    const nowSpy = spyOn(Date, "now").mockReturnValue(fixedNow);
+    try {
+      const host = createMockHost({
+        renderer: testRenderer.renderer,
+        usage: usageAt(fixedNow, { rolling: 5, weekly: 25, monthly: 100 }),
+        options: { mode: "pace" },
+      });
+      const cleanup = await mountHost(host);
+      await testRenderer.flush();
+
+      const lines = nonEmptyLines(testRenderer.captureCharFrame());
+      expect(lines).toHaveLength(4);
+      expect(lines[1]).toContain("  5% ");
+      expect(lines[2]).toContain(" 25% ");
+      expect(lines[3]).toContain("100% ");
+
+      const spans = testRenderer.captureSpans();
+      const barColumns = ["5-hour", "Weekly", "Monthly"].map((label) =>
+        barStartColumn(spans, label),
+      );
+      expect(barColumns).toEqual([19, 19, 19]);
+      expect(new Set(barColumns).size).toBe(1);
+
+      cleanup();
+    } finally {
+      nowSpy.mockRestore();
+      await testRenderer.dispose();
+    }
+  });
+
   test("renders a limited pace row as unmistakably critical red without status text", async () => {
     const testRenderer = await createTestRenderer({ width: 64, height: 6 });
     const fixedNow = new Date(2026, 10, 27, 12, 45, 0, 0).getTime();
