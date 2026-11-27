@@ -71,17 +71,19 @@ describe("OpenCode Go limits sidebar plugin", () => {
     }
   });
 
-  test("renders the three Go meters, percentages and reset countdowns", async () => {
+  test("renders all three two-line meters when mode is explicitly expanded", async () => {
     const testRenderer = await createTestRenderer({ width: 64, height: 14 });
     try {
       const host = createMockHost({
         renderer: testRenderer.renderer,
         usage: usageAt(Date.now()),
+        options: { mode: "expanded" },
       });
       const cleanup = await mountHost(host);
       await testRenderer.flush();
 
       const frame = testRenderer.captureCharFrame();
+      expect(nonEmptyLines(frame)).toHaveLength(7);
       expect(frame).toContain("OpenCode Go");
       expect(frame).toContain("5-hour");
       expect(frame).not.toContain("5-hour window");
@@ -107,6 +109,7 @@ describe("OpenCode Go limits sidebar plugin", () => {
       const host = createMockHost({
         renderer: testRenderer.renderer,
         usage: usageAt(Date.now(), { rolling: 90, weekly: 95, monthly: 99 }),
+        options: { mode: "expanded" },
       });
       const cleanup = await mountHost(host);
       await testRenderer.flush();
@@ -125,6 +128,7 @@ describe("OpenCode Go limits sidebar plugin", () => {
       const host = createMockHost({
         renderer: testRenderer.renderer,
         unavailable: true,
+        options: { mode: "expanded" },
       });
       const cleanup = await mountHost(host);
       await testRenderer.flush();
@@ -144,6 +148,7 @@ describe("OpenCode Go limits sidebar plugin", () => {
       const host = createMockHost({
         renderer: testRenderer.renderer,
         failure: new Error("limits endpoint offline"),
+        options: { mode: "expanded" },
       });
       const cleanup = await mountHost(host);
       await testRenderer.flush();
@@ -276,27 +281,6 @@ function thickColors(spans: CapturedSpan[]): Set<string> {
 }
 
 describe("compact mode", () => {
-  test("keeps the expanded layout when mode is not configured", async () => {
-    const testRenderer = await createTestRenderer({ width: 64, height: 14 });
-    try {
-      const host = createMockHost({
-        renderer: testRenderer.renderer,
-        usage: usageAt(Date.now()),
-      });
-      const cleanup = await mountHost(host);
-      await testRenderer.flush();
-
-      const lines = nonEmptyLines(testRenderer.captureCharFrame());
-      expect(lines.length).toBeGreaterThan(2);
-      expect(testRenderer.captureCharFrame()).toContain("5-hour");
-      expect(testRenderer.captureCharFrame()).not.toContain("5-hour window");
-      expect(testRenderer.captureCharFrame()).toContain("━━");
-      cleanup();
-    } finally {
-      await testRenderer.dispose();
-    }
-  });
-
   test("renders the bold title and right-aligned monthly percentage plus the most urgent short-window warning on two rows", async () => {
     const testRenderer = await createTestRenderer({ width: 64, height: 6 });
     const fixedNow = new Date(2026, 10, 27, 12, 45, 0, 0).getTime();
@@ -511,6 +495,42 @@ describe("compact mode", () => {
 });
 
 describe("pace mode", () => {
+  test("renders the four-row pace view when mode is not configured", async () => {
+    const testRenderer = await createTestRenderer({ width: 64, height: 6 });
+    const fixedNow = new Date(2026, 10, 27, 12, 45, 0, 0).getTime();
+    const nowSpy = spyOn(Date, "now").mockReturnValue(fixedNow);
+    try {
+      const host = createMockHost({
+        renderer: testRenderer.renderer,
+        usage: usageAt(fixedNow),
+      });
+      const cleanup = await mountHost(host);
+      await testRenderer.flush();
+
+      const lines = nonEmptyLines(testRenderer.captureCharFrame());
+      expect(lines).toHaveLength(4);
+      expect(lines[0]).toBe("OpenCode Go");
+      expect(lines[1]).toContain("5-hour");
+      expect(lines[1]).toContain(" 25% ");
+      expect(lines[2]).toContain("Weekly");
+      expect(lines[2]).toContain(" 50% ");
+      expect(lines[3]).toContain("Monthly");
+      expect(lines[3]).toContain(" 80% ");
+
+      const spans = testRenderer.captureSpans();
+      expect(spanBold(spans, "OpenCode Go")).toBe(true);
+      const barColumns = ["5-hour", "Weekly", "Monthly"].map((label) =>
+        barStartColumn(spans, label),
+      );
+      expect(barColumns).toEqual([19, 19, 19]);
+
+      cleanup();
+    } finally {
+      nowSpy.mockRestore();
+      await testRenderer.dispose();
+    }
+  });
+
   test("renders a bold title and exactly three composite pace rows with behind and ahead segments", async () => {
     const testRenderer = await createTestRenderer({ width: 64, height: 6 });
     const fixedNow = new Date(2026, 10, 27, 12, 45, 0, 0).getTime();
