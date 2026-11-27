@@ -25,7 +25,7 @@ import { createMockHost, usageAt } from "../test/integration/host";
 // are byte-for-byte reproducible on every host.
 process.env.TZ = "UTC";
 
-const FIXED_NOW = Date.UTC(2026, 10, 27, 9, 30, 0);
+const FIXED_NOW = Date.UTC(2026, 10, 27, 12, 45, 0);
 const SESSION_ID = "ses_demo_compact_sidebar";
 const OUTPUT_PATH = join(import.meta.dir, "demo.svg");
 
@@ -176,15 +176,26 @@ function drawableLines(frame: CapturedFrame): RenderedLine[] {
     .filter((line) => line.draws.length > 0);
 }
 
+/** Rebuild a captured row, preserving the gaps between positioned spans. */
+function lineText(line: RenderedLine): string {
+  let text = "";
+  let column = 0;
+  for (const draw of line.draws) {
+    text += " ".repeat(Math.max(0, draw.column - column));
+    text += draw.text;
+    column = draw.column + draw.text.length;
+  }
+  return text;
+}
+
 function buildSvg(frame: CapturedFrame): string {
   const lines = drawableLines(frame);
-  if (lines.length !== 1) {
+  if (lines.length !== 2) {
     throw new Error(
-      `Expected the compact widget to render one line, captured ${lines.length}`,
+      `Expected the compact widget to render two rows, captured ${lines.length}`,
     );
   }
 
-  const line = lines[0] as RenderedLine;
   const windowX = 24;
   const windowY = 16;
   const titleBarHeight = 32;
@@ -192,7 +203,7 @@ function buildSvg(frame: CapturedFrame): string {
   const textOffsetY = 38;
   const bodyWidth = Math.max(
     540,
-    line.endColumn * CHAR_WIDTH + bodyPadding * 2,
+    ...lines.map((line) => line.endColumn * CHAR_WIDTH + bodyPadding * 2),
   );
   const bodyHeight = lines.length * LINE_HEIGHT + 50;
   const windowHeight = titleBarHeight + bodyHeight;
@@ -204,27 +215,29 @@ function buildSvg(frame: CapturedFrame): string {
   const textX = (column: number) => windowX + bodyPadding + column * CHAR_WIDTH;
   const firstBaseline = windowY + titleBarHeight + textOffsetY;
 
-  for (const draw of line.draws) {
-    assertContrast("Captured sidebar text", draw.fill, WINDOW_BG);
+  for (const line of lines) {
+    for (const draw of line.draws) {
+      assertContrast("Captured sidebar text", draw.fill, WINDOW_BG);
+    }
   }
   assertContrast("Window title", TITLE_TEXT, TITLE_BG);
   assertContrast("Demo caption", CAPTION_TEXT, PAGE_BG);
 
-  const renderedLine = line.draws
-    .map(
-      (draw) =>
-        `    <text x="${textX(draw.column)}" y="${firstBaseline}" fill="${draw.fill}" font-family="${MONO_FONT}" font-size="${BODY_FONT_SIZE}" xml:space="preserve">${escapeXml(draw.text)}</text>`,
+  const renderedLines = lines
+    .flatMap((line, index) =>
+      line.draws.map(
+        (draw) =>
+          `    <text x="${textX(draw.column)}" y="${firstBaseline + index * LINE_HEIGHT}" fill="${draw.fill}" font-family="${MONO_FONT}" font-size="${BODY_FONT_SIZE}" xml:space="preserve">${escapeXml(draw.text)}</text>`,
+      ),
     )
     .join("\n");
 
-  const visibleText = lines
-    .map((rendered) => rendered.draws.map((draw) => draw.text).join(""))
-    .join("\n");
+  const visibleText = lines.map(lineText).join("\n");
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}" role="img" aria-labelledby="demo-title demo-desc">
-  <title id="demo-title">OpenCode Go compact sidebar with a projected rolling runout</title>
-  <desc id="demo-desc">Terminal-style screenshot of the OpenCode Go sidebar in compact mode, captured from a ${frame.cols} by ${frame.rows} character frame rendered with fake usage data. The single line reads: ${escapeXml(visibleText)}</desc>
+  <title id="demo-title">OpenCode Go compact sidebar with a monthly summary and a projected rolling runout</title>
+  <desc id="demo-desc">Terminal-style screenshot of the OpenCode Go sidebar in compact mode, captured from a ${frame.cols} by ${frame.rows} character frame rendered with fake usage data. The two rows read: ${escapeXml(visibleText)}</desc>
   <rect width="${svgWidth}" height="${svgHeight}" fill="${PAGE_BG}"/>
   <rect x="${windowX}" y="${windowY + 4}" width="${windowWidth}" height="${windowHeight}" rx="10" fill="#000000" opacity="0.45"/>
   <defs>
@@ -240,7 +253,7 @@ function buildSvg(frame: CapturedFrame): string {
     <circle cx="${windowX + 36}" cy="${windowY + 16}" r="5" fill="#febc2e"/>
     <circle cx="${windowX + 52}" cy="${windowY + 16}" r="5" fill="#28c840"/>
     <text x="${windowX + 68}" y="${windowY + 20}" fill="${TITLE_TEXT}" font-family="${MONO_FONT}" font-size="11">OpenCode — session sidebar (compact)</text>
-${renderedLine}
+${renderedLines}
   </g>
   <rect x="${windowX}" y="${windowY}" width="${windowWidth}" height="${windowHeight}" rx="10" fill="none" stroke="${WINDOW_BORDER}"/>
   <text x="${windowX}" y="${captionY}" fill="${CAPTION_TEXT}" font-family="${MONO_FONT}" font-size="11">Rendered with @opentui/core/testing + @opentui/solid · fake Go usage · frozen clock</text>
@@ -270,15 +283,15 @@ async function main(): Promise<void> {
     const frameListeners = renderer.listenerCount("frame");
     const resizeListeners = renderer.listenerCount("resize");
 
-    const base = usageAt(FIXED_NOW, { rolling: 86, weekly: 41, monthly: 63 });
+    const base = usageAt(FIXED_NOW, { rolling: 70, weekly: 10, monthly: 66 });
     const host = createMockHost({
       renderer: setup.renderer,
       usage: {
-        rolling: { ...base.rolling, resetsAt: FIXED_NOW + 3 * 60 * 60_000 },
-        weekly: { ...base.weekly, resetsAt: FIXED_NOW + 2 * 24 * 60 * 60_000 },
+        rolling: { ...base.rolling, resetsAt: FIXED_NOW + 1.5 * 60 * 60_000 },
+        weekly: { ...base.weekly, resetsAt: FIXED_NOW + 7 * 24 * 60 * 60_000 },
         monthly: {
           ...base.monthly,
-          resetsAt: FIXED_NOW + 12 * 24 * 60 * 60_000,
+          resetsAt: FIXED_NOW + 5 * 24 * 60 * 60_000,
         },
       },
       options: { mode: "compact", refreshMs: 60_000 },
@@ -308,16 +321,20 @@ async function main(): Promise<void> {
 
     const charFrame = setup.captureCharFrame();
     const captured = setup.captureSpans();
-    const visible = drawableLines(captured)
-      .map((rendered) => rendered.draws.map((draw) => draw.text).join(""))
-      .join("\n");
+    const visibleLines = drawableLines(captured).map(lineText);
+    const visible = visibleLines.join("\n");
 
     if (
-      visible !== "OpenCode Go  ⚠ WARN · 5-hour window 86% · runout 09:45" ||
-      !charFrame.includes(visible)
+      visibleLines.length !== 2 ||
+      !visibleLines[0]?.startsWith("OpenCode Go") ||
+      !visibleLines[0]?.endsWith("Monthly 66%") ||
+      visibleLines[1] !== "5-hour window  ⚠ 14:15" ||
+      !charFrame.includes("OpenCode Go") ||
+      !charFrame.includes("Monthly 66%") ||
+      !charFrame.includes("5-hour window  ⚠ 14:15")
     ) {
       throw new Error(
-        `Unexpected compact line: ${JSON.stringify(visible)} (frame: ${JSON.stringify(charFrame)})`,
+        `Unexpected compact rows: ${JSON.stringify(visible)} (frame: ${JSON.stringify(charFrame)})`,
       );
     }
     if (host.requests.length !== 1) {

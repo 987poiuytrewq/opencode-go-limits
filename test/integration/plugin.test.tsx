@@ -1,5 +1,6 @@
 /** @jsxImportSource @opentui/solid */
 import { describe, expect, spyOn, test } from "bun:test";
+import type { CapturedFrame } from "@opentui/core";
 import { createTestRenderer } from "@opentui/core/testing";
 import { render } from "@opentui/solid";
 import { PluginContextProvider } from "@opencode/plugin/tui";
@@ -202,7 +203,24 @@ describe("OpenCode Go limits sidebar plugin", () => {
 });
 
 function nonEmptyLines(frame: string): string[] {
-  return frame.split("\n").filter((line) => line.trim().length > 0);
+  return frame
+    .split("\n")
+    .map((line) => line.trimEnd())
+    .filter((line) => line.trim().length > 0);
+}
+
+function spanColor(spans: CapturedFrame, text: string): string | undefined {
+  for (const line of spans.lines) {
+    for (const span of line.spans) {
+      if (!span.text.includes(text)) continue;
+      return `#${span.fg
+        .toInts()
+        .slice(0, 3)
+        .map((channel) => channel.toString(16).padStart(2, "0"))
+        .join("")}`;
+    }
+  }
+  return undefined;
 }
 
 describe("compact mode", () => {
@@ -217,7 +235,7 @@ describe("compact mode", () => {
       await testRenderer.flush();
 
       const lines = nonEmptyLines(testRenderer.captureCharFrame());
-      expect(lines.length).toBeGreaterThan(1);
+      expect(lines.length).toBeGreaterThan(2);
       expect(testRenderer.captureCharFrame()).toContain("5-hour window");
       expect(testRenderer.captureCharFrame()).toContain("━━");
       cleanup();
@@ -226,7 +244,41 @@ describe("compact mode", () => {
     }
   });
 
-  test("renders the most urgent warning as one line", async () => {
+  test("renders a monthly summary and the most urgent short-window warning on two rows", async () => {
+    const testRenderer = await createTestRenderer({ width: 64, height: 6 });
+    const fixedNow = new Date(2026, 10, 27, 12, 45, 0, 0).getTime();
+    const nowSpy = spyOn(Date, "now").mockReturnValue(fixedNow);
+    try {
+      const base = usageAt(fixedNow, { rolling: 70, weekly: 10, monthly: 66 });
+      const host = createMockHost({
+        renderer: testRenderer.renderer,
+        usage: {
+          rolling: { ...base.rolling, resetsAt: fixedNow + 1.5 * 60 * 60_000 },
+          weekly: { ...base.weekly, resetsAt: fixedNow + 7 * 24 * 60 * 60_000 },
+          monthly: {
+            ...base.monthly,
+            resetsAt: fixedNow + 5 * 24 * 60 * 60_000,
+          },
+        },
+        options: { mode: "compact" },
+      });
+      const cleanup = await mountHost(host);
+      await testRenderer.flush();
+
+      const lines = nonEmptyLines(testRenderer.captureCharFrame());
+      expect(lines).toHaveLength(2);
+      expect(lines[0]).toContain("OpenCode Go");
+      expect(lines[0]).toContain("Monthly 66%");
+      expect(lines[0]).not.toContain("⚠");
+      expect(lines[1]).toBe("5-hour window  ⚠ 14:15");
+      cleanup();
+    } finally {
+      nowSpy.mockRestore();
+      await testRenderer.dispose();
+    }
+  });
+
+  test("marks an approaching monthly value on the summary row", async () => {
     const testRenderer = await createTestRenderer({ width: 64, height: 6 });
     try {
       const host = createMockHost({
@@ -238,17 +290,19 @@ describe("compact mode", () => {
       await testRenderer.flush();
 
       const lines = nonEmptyLines(testRenderer.captureCharFrame());
-      expect(lines).toHaveLength(1);
-      expect(lines[0]).toContain("OpenCode Go  ⚠ WARN");
-      expect(lines[0]).toContain("Monthly 80%");
-      expect(lines[0]).not.toContain("5-hour window");
+      expect(lines).toHaveLength(2);
+      expect(lines[0]).toContain("Monthly 80%  ⚠");
+      expect(lines[1]).toContain("Weekly ✓ resets 1d");
+      expect(spanColor(testRenderer.captureSpans(), "Monthly 80%")).toBe(
+        "#ffff00",
+      );
       cleanup();
     } finally {
       await testRenderer.dispose();
     }
   });
 
-  test("renders a limited meter as one critical line", async () => {
+  test("renders an exhausted monthly meter as a critical summary row", async () => {
     const testRenderer = await createTestRenderer({ width: 64, height: 6 });
     try {
       const now = Date.now();
@@ -265,21 +319,24 @@ describe("compact mode", () => {
       await testRenderer.flush();
 
       const lines = nonEmptyLines(testRenderer.captureCharFrame());
-      expect(lines).toHaveLength(1);
-      expect(lines[0]).toContain("✖ LIMIT");
-      expect(lines[0]).toContain("Monthly 100%");
+      expect(lines).toHaveLength(2);
+      expect(lines[0]).toContain("Monthly 100% ✖");
+      expect(spanColor(testRenderer.captureSpans(), "Monthly 100%")).toBe(
+        "#ff0000",
+      );
       cleanup();
     } finally {
       await testRenderer.dispose();
     }
   });
 
-  test("keeps unavailable and request-error states distinct on one line", async () => {
+  test("keeps unavailable, request-error, and loading states distinct in two rows", async () => {
     const unavailableRenderer = await createTestRenderer({
       width: 64,
       height: 6,
     });
     const errorRenderer = await createTestRenderer({ width: 64, height: 6 });
+    const loadingRenderer = await createTestRenderer({ width: 64, height: 6 });
     try {
       const unavailableHost = createMockHost({
         renderer: unavailableRenderer.renderer,
@@ -291,9 +348,10 @@ describe("compact mode", () => {
       const unavailableLines = nonEmptyLines(
         unavailableRenderer.captureCharFrame(),
       );
-      expect(unavailableLines).toHaveLength(1);
-      expect(unavailableLines[0]).toContain("– Go usage unavailable");
-      expect(unavailableLines[0]).not.toContain("error");
+      expect(unavailableLines).toHaveLength(2);
+      expect(unavailableLines[0]).toContain("Monthly –");
+      expect(unavailableLines[1]).toContain("– Go usage unavailable");
+      expect(unavailableLines[1]).not.toContain("error");
 
       const errorHost = createMockHost({
         renderer: errorRenderer.renderer,
@@ -303,38 +361,33 @@ describe("compact mode", () => {
       const errorCleanup = await mountHost(errorHost);
       await errorRenderer.flush();
       const errorLines = nonEmptyLines(errorRenderer.captureCharFrame());
-      expect(errorLines).toHaveLength(1);
-      expect(errorLines[0]).toContain("✖ error");
-      expect(errorLines[0]).toContain("limits endpoint offline");
-      expect(errorLines[0]).not.toContain("unavailable");
+      expect(errorLines).toHaveLength(2);
+      expect(errorLines[0]).toContain("Monthly ✖");
+      expect(errorLines[1]).toContain("✖ error");
+      expect(errorLines[1]).toContain("limits endpoint offline");
+      expect(errorLines[1]).not.toContain("unavailable");
 
+      const loadingHost = createMockHost({
+        renderer: loadingRenderer.renderer,
+        hang: true,
+        options: { mode: "compact" },
+      });
+      const loadingCleanup = await mountHost(loadingHost);
+      await loadingRenderer.flush();
+      const loadingLines = nonEmptyLines(loadingRenderer.captureCharFrame());
+      expect(loadingLines).toHaveLength(2);
+      expect(loadingLines[0]).toContain("Monthly …");
+      expect(loadingLines[1]).toContain("… loading limits");
+      expect(loadingLines[1]).not.toContain("unavailable");
+      expect(loadingLines[1]).not.toContain("error");
+
+      loadingCleanup();
       errorCleanup();
       unavailableCleanup();
     } finally {
       await unavailableRenderer.dispose();
       await errorRenderer.dispose();
-    }
-  });
-
-  test("renders the loading state as one line", async () => {
-    const testRenderer = await createTestRenderer({ width: 64, height: 6 });
-    try {
-      const host = createMockHost({
-        renderer: testRenderer.renderer,
-        hang: true,
-        options: { mode: "compact" },
-      });
-      const cleanup = await mountHost(host);
-      await testRenderer.flush();
-
-      const lines = nonEmptyLines(testRenderer.captureCharFrame());
-      expect(lines).toHaveLength(1);
-      expect(lines[0]).toContain("… loading limits");
-      expect(lines[0]).not.toContain("unavailable");
-      expect(lines[0]).not.toContain("error");
-      cleanup();
-    } finally {
-      await testRenderer.dispose();
+      await loadingRenderer.dispose();
     }
   });
 });

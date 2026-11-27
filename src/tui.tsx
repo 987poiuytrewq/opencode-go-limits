@@ -2,12 +2,13 @@ import { For, Show, createSignal, onCleanup, onMount } from "solid-js";
 import { TextAttributes } from "@opentui/core";
 import { Plugin, usePlugin } from "@opencode/plugin/tui";
 import {
+  compactTitle,
   formatCompactError,
   formatCompactLoading,
   formatCompactStatus,
   formatCompactUnavailable,
-  selectCompactStatus,
-  type CompactSeverity,
+  type CompactRows,
+  type CompactTone,
 } from "./compact";
 import { pluginSettings, type SidebarMode } from "./settings";
 import {
@@ -93,45 +94,27 @@ function QuotaWidget(props: { refreshMs: number; mode: SidebarMode }) {
     context.renderer.off("resize", measureBar);
   });
 
-  const severityColor = (severity: CompactSeverity) =>
-    severity === "critical"
+  const toneColor = (tone: CompactTone) =>
+    tone === "critical"
       ? context.theme.text.feedback.error.base
-      : severity === "warning"
+      : tone === "warning"
         ? context.theme.text.feedback.warning.base
-        : context.theme.text.feedback.success.base;
+        : tone === "ok"
+          ? context.theme.text.feedback.success.base
+          : tone === "muted"
+            ? context.theme.text.muted
+            : context.theme.text.base;
 
-  const compactLine = (): { text: string; color: string } => {
+  const compactRows = (): CompactRows => {
     const failure = error();
-    if (failure) {
-      return {
-        text: formatCompactError(failure),
-        color: context.theme.text.feedback.error.base,
-      };
-    }
-    if (unavailable()) {
-      return {
-        text: formatCompactUnavailable(),
-        color: context.theme.text.muted,
-      };
-    }
-    if (loading()) {
-      return { text: formatCompactLoading(), color: context.theme.text.muted };
-    }
+    if (failure) return formatCompactError(failure);
+    if (unavailable()) return formatCompactUnavailable();
+    if (loading()) return formatCompactLoading();
 
     const data = usage();
-    if (!data) {
-      return {
-        text: formatCompactUnavailable(),
-        color: context.theme.text.muted,
-      };
-    }
+    if (!data) return formatCompactUnavailable();
 
-    const now = Date.now();
-    const status = selectCompactStatus(data, now);
-    return {
-      text: formatCompactStatus(status, now),
-      color: severityColor(status.severity),
-    };
+    return formatCompactStatus(data, Date.now());
   };
 
   return (
@@ -230,8 +213,25 @@ function QuotaWidget(props: { refreshMs: number; mode: SidebarMode }) {
         </Show>
       </Show>
       <Show when={props.mode === "compact"}>
-        <text fg={compactLine().color} width="100%" wrapMode="none">
-          {compactLine().text}
+        <box
+          flexDirection="row"
+          justifyContent="space-between"
+          alignItems="center"
+          width="100%"
+        >
+          <text fg={context.theme.text.base} attributes={TextAttributes.BOLD}>
+            {compactTitle()}
+          </text>
+          <text fg={toneColor(compactRows().summary.tone)}>
+            {compactRows().summary.text}
+          </text>
+        </box>
+        <text
+          fg={toneColor(compactRows().detail.tone)}
+          width="100%"
+          wrapMode="none"
+        >
+          {compactRows().detail.text}
         </text>
       </Show>
     </box>
