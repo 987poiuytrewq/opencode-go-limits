@@ -26,6 +26,7 @@
   },
   "files": [
     "src/",
+    "demo/demo.svg",
     "README.md",
     "LICENSE"
   ],
