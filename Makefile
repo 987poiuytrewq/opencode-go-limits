@@ -8,7 +8,7 @@ install:
 	$(BUN) install --frozen-lockfile
 
 format-check:
-	$(BUN) fmt --check package.json tsconfig.json bunfig.toml .github/workflows/ci.yml src test
+	$(BUN) fmt --check package.json tsconfig.json bunfig.toml .github/workflows/ci.yml .github/workflows/release.yml src test
 	$(BUN) -e 'const readme = await Bun.file("README.md").text(); const match = readme.match(/```json\s*\n([\s\S]*?)\n\s*```/); if (!match) throw new Error("README strict JSON example not found"); JSON.parse(match[1])'
 
 typecheck:

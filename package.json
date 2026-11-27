@@ -1,11 +1,34 @@
 {
-  "name": "opencode-go-limits",
+  "name": "opencode-go-usage-limits",
   "version": "0.1.0",
-  "private": true,
+  "description": "TUI-only OpenCode plugin that shows OpenCode Go rolling, weekly, and monthly usage limits in the session sidebar.",
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "opencode-tui",
+    "opencode-go",
+    "usage",
+    "limits",
+    "tui"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/987poiuytrewq/opencode-go-limits.git"
+  },
+  "homepage": "https://github.com/987poiuytrewq/opencode-go-limits#readme",
+  "bugs": {
+    "url": "https://github.com/987poiuytrewq/opencode-go-limits/issues"
+  },
   "type": "module",
   "exports": {
     "./tui": "./src/tui.tsx"
   },
+  "files": [
+    "src/",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "test": "make test",
     "test:unit": "make test-unit",
@@ -13,13 +36,24 @@
     "typecheck": "make typecheck",
     "format:check": "make format-check"
   },
+  "dependencies": {
+    "@opencode/plugin": "2.3.0"
+  },
+  "peerDependencies": {
+    "@opentui/core": ">=0.6.6",
+    "@opentui/solid": ">=0.6.6",
+    "solid-js": ">=1.9.0"
+  },
   "devDependencies": {
-    "@opencode/plugin": "2.3.0",
+    "@opencode/client": "2.3.0",
     "@opentui/core": "0.6.6",
     "@opentui/solid": "0.6.6",
     "@types/bun": "1.4.4",
     "bun-types": "1.4.4",
     "solid-js": "^1.9.14",
     "typescript": "^5.9.3"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
