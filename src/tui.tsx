@@ -5,10 +5,12 @@ import {
   compactTitle,
   formatCompactError,
   formatCompactLoading,
-  formatCompactStatus,
   formatCompactUnavailable,
-  type CompactRows,
+  formatCompactView,
+  type CompactDetailRow,
+  type CompactRow,
   type CompactTone,
+  type CompactView,
 } from "./compact";
 import { PACE_TITLE, buildPaceRows, type PaceTone } from "./pace";
 import { pluginSettings, type SidebarMode } from "./settings";
@@ -115,16 +117,34 @@ function QuotaWidget(props: { refreshMs: number; mode: SidebarMode }) {
     return { text: "… loading limits", tone: "muted" };
   };
 
-  const compactRows = (): CompactRows => {
+  const compactView = (): CompactView => {
     const failure = error();
-    if (failure) return formatCompactError(failure);
-    if (unavailable()) return formatCompactUnavailable();
-    if (loading()) return formatCompactLoading();
+    if (failure) {
+      return { kind: "detail", rows: formatCompactError(failure) };
+    }
+    if (unavailable()) {
+      return { kind: "detail", rows: formatCompactUnavailable() };
+    }
+    if (loading()) {
+      return { kind: "detail", rows: formatCompactLoading() };
+    }
 
     const data = usage();
-    if (!data) return formatCompactUnavailable();
+    if (!data) {
+      return { kind: "detail", rows: formatCompactUnavailable() };
+    }
 
-    return formatCompactStatus(data, Date.now());
+    return formatCompactView(data, Date.now());
+  };
+
+  const compactSummary = (): CompactRow => {
+    const view = compactView();
+    return view.kind === "healthy" ? view.summary : view.rows.summary;
+  };
+
+  const compactDetail = (): CompactDetailRow | undefined => {
+    const view = compactView();
+    return view.kind === "detail" ? view.rows.detail : undefined;
   };
 
   return (
@@ -280,18 +300,22 @@ function QuotaWidget(props: { refreshMs: number; mode: SidebarMode }) {
           <text fg={context.theme.text.base} attributes={TextAttributes.BOLD}>
             {compactTitle()}
           </text>
-          <text fg={toneColor(compactRows().summary.tone)}>
-            {compactRows().summary.text}
+          <text fg={toneColor(compactSummary().tone)}>
+            {compactSummary().text}
           </text>
         </box>
-        <text width="100%" wrapMode="none">
-          <span style={{ fg: context.theme.text.base }}>
-            {compactRows().detail.label}
-          </span>
-          <span style={{ fg: toneColor(compactRows().detail.tone) }}>
-            {compactRows().detail.status}
-          </span>
-        </text>
+        <Show when={compactDetail()}>
+          {(detail) => (
+            <text width="100%" wrapMode="none">
+              <span style={{ fg: context.theme.text.base }}>
+                {detail().label}
+              </span>
+              <span style={{ fg: toneColor(detail().tone) }}>
+                {detail().status}
+              </span>
+            </text>
+          )}
+        </Show>
       </Show>
     </box>
   );

@@ -281,6 +281,76 @@ function thickColors(spans: CapturedSpan[]): Set<string> {
 }
 
 describe("compact mode", () => {
+  test("collapses to a single bold title and green healthy indicator when every meter is healthy", async () => {
+    const testRenderer = await createTestRenderer({ width: 64, height: 4 });
+    const fixedNow = new Date(2026, 10, 27, 12, 45, 0, 0).getTime();
+    const nowSpy = spyOn(Date, "now").mockReturnValue(fixedNow);
+    try {
+      const host = createMockHost({
+        renderer: testRenderer.renderer,
+        usage: usageAt(fixedNow, { rolling: 10, weekly: 20, monthly: 66 }),
+        options: { mode: "compact" },
+      });
+      const cleanup = await mountHost(host);
+      await testRenderer.flush();
+
+      const lines = nonEmptyLines(testRenderer.captureCharFrame());
+      expect(lines).toHaveLength(1);
+      expect(lines[0]).toMatch(/^OpenCode Go\s+●$/);
+      expect(lines[0]).not.toContain("%");
+      expect(lines[0]).not.toContain("⚠");
+      expect(lines[0]).not.toContain("✖");
+      expect(lines[0]).not.toContain("Weekly");
+
+      const spans = testRenderer.captureSpans();
+      expect(spanBold(spans, "OpenCode Go")).toBe(true);
+      expect(spanColor(spans, "●")).toBe("#3fb950");
+      cleanup();
+    } finally {
+      nowSpy.mockRestore();
+      await testRenderer.dispose();
+    }
+  });
+
+  test("keeps the two-row detail whenever a meter is warning or critical", async () => {
+    const warningRenderer = await createTestRenderer({ width: 64, height: 6 });
+    const criticalRenderer = await createTestRenderer({ width: 64, height: 6 });
+    const fixedNow = new Date(2026, 10, 27, 12, 45, 0, 0).getTime();
+    const nowSpy = spyOn(Date, "now").mockReturnValue(fixedNow);
+    try {
+      const warningHost = createMockHost({
+        renderer: warningRenderer.renderer,
+        usage: usageAt(fixedNow, { rolling: 10, weekly: 20, monthly: 85 }),
+        options: { mode: "compact" },
+      });
+      const warningCleanup = await mountHost(warningHost);
+      await warningRenderer.flush();
+      const warningLines = nonEmptyLines(warningRenderer.captureCharFrame());
+      expect(warningLines).toHaveLength(2);
+      expect(warningLines[0]).toMatch(/^OpenCode Go\s+85%$/);
+      expect(warningLines.join("\n")).not.toContain("●");
+
+      const criticalHost = createMockHost({
+        renderer: criticalRenderer.renderer,
+        usage: usageAt(fixedNow, { rolling: 100, weekly: 20, monthly: 66 }),
+        options: { mode: "compact" },
+      });
+      const criticalCleanup = await mountHost(criticalHost);
+      await criticalRenderer.flush();
+      const criticalLines = nonEmptyLines(criticalRenderer.captureCharFrame());
+      expect(criticalLines).toHaveLength(2);
+      expect(criticalLines[1]).toBe("5-hour ✖ limit reached");
+      expect(criticalLines.join("\n")).not.toContain("●");
+
+      criticalCleanup();
+      warningCleanup();
+    } finally {
+      nowSpy.mockRestore();
+      await warningRenderer.dispose();
+      await criticalRenderer.dispose();
+    }
+  });
+
   test("renders the bold title and right-aligned monthly percentage plus the most urgent short-window warning on two rows", async () => {
     const testRenderer = await createTestRenderer({ width: 64, height: 6 });
     const fixedNow = new Date(2026, 10, 27, 12, 45, 0, 0).getTime();
@@ -452,6 +522,7 @@ describe("compact mode", () => {
       expect(unavailableLines[0]).not.toContain("Monthly");
       expect(unavailableLines[1]).toContain("– Go usage unavailable");
       expect(unavailableLines[1]).not.toContain("error");
+      expect(unavailableLines.join("\n")).not.toContain("●");
 
       const errorHost = createMockHost({
         renderer: errorRenderer.renderer,
@@ -467,6 +538,7 @@ describe("compact mode", () => {
       expect(errorLines[1]).toContain("✖ error");
       expect(errorLines[1]).toContain("limits endpoint offline");
       expect(errorLines[1]).not.toContain("unavailable");
+      expect(errorLines.join("\n")).not.toContain("●");
 
       const loadingHost = createMockHost({
         renderer: loadingRenderer.renderer,
@@ -482,6 +554,7 @@ describe("compact mode", () => {
       expect(loadingLines[1]).toContain("… loading limits");
       expect(loadingLines[1]).not.toContain("unavailable");
       expect(loadingLines[1]).not.toContain("error");
+      expect(loadingLines.join("\n")).not.toContain("●");
 
       loadingCleanup();
       errorCleanup();

@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+  COMPACT_HEALTHY_INDICATOR,
   compactTitle,
   formatCompactError,
   formatCompactLoading,
@@ -8,6 +9,8 @@ import {
   formatCompactShortWindow,
   formatCompactStatus,
   formatCompactUnavailable,
+  formatCompactView,
+  isCompactHealthy,
   selectCompactStatus,
   selectMonthlyStatus,
 } from "../../src/compact";
@@ -191,6 +194,61 @@ describe("short-window compact row", () => {
     expect(formatCompactPercent(150)).toBe("100%");
     expect(formatCompactPercent(Number.NaN)).toBe("0%");
     expect(formatCompactPercent(-5)).toBe("0%");
+  });
+});
+
+describe("compact health decision", () => {
+  test("is healthy when every meter is below 80% with no projected runout", () => {
+    expect(isCompactHealthy(usage([10, 20, 30]), NOW)).toBe(true);
+  });
+
+  test("is unhealthy when any meter is at or above 80%", () => {
+    expect(isCompactHealthy(usage([10, 20, 80]), NOW)).toBe(false);
+    expect(isCompactHealthy(usage([85, 20, 30]), NOW)).toBe(false);
+  });
+
+  test("is unhealthy when any meter is exhausted", () => {
+    expect(isCompactHealthy(usage([100, 20, 30]), NOW)).toBe(false);
+    expect(isCompactHealthy(usage([10, 20, 150]), NOW)).toBe(false);
+  });
+
+  test("is unhealthy when the API marks any meter limited", () => {
+    expect(
+      isCompactHealthy(
+        usage([10, 20, 30], undefined, [false, true, false]),
+        NOW,
+      ),
+    ).toBe(false);
+  });
+
+  test("is unhealthy when any meter is projected to run out before reset", () => {
+    expect(
+      isCompactHealthy(
+        usage([70, 20, 30], [NOW + 1.5 * HOUR, NOW + 7 * DAY, NOW + 20 * DAY]),
+        NOW,
+      ),
+    ).toBe(false);
+  });
+
+  test("is unhealthy when a percentage is invalid", () => {
+    expect(isCompactHealthy(usage([Number.NaN, 20, 30]), NOW)).toBe(false);
+  });
+
+  test("collapses healthy usage to a single title plus a green indicator", () => {
+    expect(formatCompactView(usage([10, 20, 30]), NOW)).toEqual({
+      kind: "healthy",
+      summary: { text: COMPACT_HEALTHY_INDICATOR, tone: "ok" },
+    });
+    expect(COMPACT_HEALTHY_INDICATOR).toBe("●");
+  });
+
+  test("keeps the detailed two-row view for any unhealthy meter", () => {
+    const view = formatCompactView(usage([10, 20, 80]), NOW);
+
+    expect(view.kind).toBe("detail");
+    if (view.kind !== "detail") throw new Error("expected a detail view");
+    expect(view.rows.summary).toEqual({ text: "80%", tone: "warning" });
+    expect(view.rows.detail.text).toBe("Weekly ✓ resets 7d");
   });
 });
 
