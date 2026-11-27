@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="624" height="62" viewBox="0 0 624 62" role="img" aria-labelledby="demo-title demo-desc">
-  <title id="demo-title">OpenCode Go compact sidebar with a bold title and a green healthy indicator</title>
+  <title id="demo-title">OpenCode Go compact sidebar with a normal-text title and a green healthy indicator</title>
   <desc id="demo-desc">Terminal-style screenshot of the OpenCode Go sidebar in compact mode, captured from a 64 by 2 character frame rendered with fake usage data. The 1 visible rows read: OpenCode Go                                                    ●</desc>
   <rect width="624" height="62" fill="#0d1117"/>
-    <text x="24" y="35" fill="#c9d1d9" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" font-weight="bold" xml:space="preserve">OpenCode Go</text>
+    <text x="24" y="35" fill="#c9d1d9" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">OpenCode Go</text>
     <text x="591" y="35" fill="#3fb950" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">●</text>
 </svg>
