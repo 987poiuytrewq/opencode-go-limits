@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="588" height="168" viewBox="0 0 588 168" role="img" aria-labelledby="demo-title demo-desc">
   <title id="demo-title">OpenCode Go compact sidebar with a projected rolling runout</title>
-  <desc id="demo-desc">Terminal-style screenshot of the OpenCode Go sidebar in compact mode, captured from a 64 by 3 character frame rendered with fake usage data. The single line reads: OpenCode Go ⚠ WARN · 5-hour window 86% · runout 09:45</desc>
+  <desc id="demo-desc">Terminal-style screenshot of the OpenCode Go sidebar in compact mode, captured from a 64 by 3 character frame rendered with fake usage data. The single line reads: OpenCode Go  ⚠ WARN · 5-hour window 86% · runout 09:45</desc>
   <rect width="588" height="168" fill="#0b0e14"/>
   <rect x="24" y="20" width="540" height="104" rx="10" fill="#000000" opacity="0.45"/>
   <defs>
@@ -17,7 +17,7 @@
     <circle cx="60" cy="32" r="5" fill="#febc2e"/>
     <circle cx="76" cy="32" r="5" fill="#28c840"/>
     <text x="92" y="36" fill="#c9d1d9" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="11">OpenCode — session sidebar (compact)</text>
-    <text x="48" y="86" fill="#ffff00" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">OpenCode Go ⚠ WARN · 5-hour window 86% · runout 09:45</text>
+    <text x="48" y="86" fill="#ffff00" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">OpenCode Go  ⚠ WARN · 5-hour window 86% · runout 09:45</text>
   </g>
   <rect x="24" y="16" width="540" height="104" rx="10" fill="none" stroke="#30363d"/>
   <text x="24" y="150" fill="#8b949e" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="11">Rendered with @opentui/core/testing + @opentui/solid · fake Go usage · frozen clock</text>

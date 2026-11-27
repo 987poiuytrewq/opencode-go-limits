@@ -77,7 +77,7 @@ describe("compact status selection", () => {
     expect(status.severity).toBe("warning");
     expect(status.limit).toBe("weekly");
     expect(formatCompactStatus(status, NOW)).toBe(
-      "OpenCode Go ⚠ WARN · Weekly 90% · resets now",
+      "OpenCode Go  ⚠ WARN · Weekly 90% · resets now",
     );
   });
 
@@ -93,7 +93,7 @@ describe("compact status selection", () => {
     expect(status.limit).toBe("rolling");
     expect(status.projection.kind).toBe("estimate");
     expect(formatCompactStatus(status, NOW)).toBe(
-      "OpenCode Go ⚠ WARN · 5-hour window 90% · runout 10:30",
+      "OpenCode Go  ⚠ WARN · 5-hour window 90% · runout 10:30",
     );
   });
 
@@ -107,7 +107,7 @@ describe("compact status selection", () => {
     expect(status.limit).toBe("weekly");
     expect(status.projection.kind).toBe("estimate");
     expect(formatCompactStatus(status, NOW)).toContain(
-      "OpenCode Go ⚠ WARN · Weekly 85% · runout ",
+      "OpenCode Go  ⚠ WARN · Weekly 85% · runout ",
     );
   });
 

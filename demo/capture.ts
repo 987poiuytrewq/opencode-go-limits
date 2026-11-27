@@ -313,7 +313,7 @@ async function main(): Promise<void> {
       .join("\n");
 
     if (
-      visible !== "OpenCode Go ⚠ WARN · 5-hour window 86% · runout 09:45" ||
+      visible !== "OpenCode Go  ⚠ WARN · 5-hour window 86% · runout 09:45" ||
       !charFrame.includes(visible)
     ) {
       throw new Error(

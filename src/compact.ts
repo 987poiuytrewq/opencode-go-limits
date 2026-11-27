@@ -142,7 +142,9 @@ export function formatCompactStatus(
       : `resets ${formatResetCountdown(status.resetsAt, new Date(now))}`;
   const symbol = SEVERITY_SYMBOLS[status.severity];
   const label = SEVERITY_LABELS[status.severity];
-  return `${TITLE} ${symbol} ${label} · ${status.label} ${formatCompactPercent(status.percent)} · ${detail}`;
+  // Compact warnings intentionally keep exactly two spaces before ⚠.
+  const gap = status.severity === "warning" ? "  " : " ";
+  return `${TITLE}${gap}${symbol} ${label} · ${status.label} ${formatCompactPercent(status.percent)} · ${detail}`;
 }
 
 /** One-line compact status shown while the first request is in flight. */
