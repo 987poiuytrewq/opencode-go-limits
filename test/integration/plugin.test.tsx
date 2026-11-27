@@ -298,9 +298,9 @@ describe("compact mode", () => {
       expect(lines[0]).not.toContain("⚠");
       expect(lines[1]).toBe("5-hour window  ⚠ 14:15");
       const spans = testRenderer.captureSpans();
-      expect(spanColor(spans, "66%")).toBe("#00ff00");
-      expect(spanColor(spans, "5-hour window")).toBe("#ffffff");
-      expect(spanColor(spans, "⚠ 14:15")).toBe("#ffff00");
+      expect(spanColor(spans, "66%")).toBe("#3fb950");
+      expect(spanColor(spans, "5-hour window")).toBe("#c9d1d9");
+      expect(spanColor(spans, "⚠ 14:15")).toBe("#d29922");
       cleanup();
     } finally {
       nowSpy.mockRestore();
@@ -324,9 +324,9 @@ describe("compact mode", () => {
       expect(lines[0]).toContain("80%  ⚠");
       expect(lines[1]).toContain("Weekly ✓ resets 1d");
       const spans = testRenderer.captureSpans();
-      expect(spanColor(spans, "80%  ⚠")).toBe("#ffff00");
-      expect(spanColor(spans, "Weekly")).toBe("#ffffff");
-      expect(spanColor(spans, "✓ resets 1d")).toBe("#00ff00");
+      expect(spanColor(spans, "80%  ⚠")).toBe("#d29922");
+      expect(spanColor(spans, "Weekly")).toBe("#c9d1d9");
+      expect(spanColor(spans, "✓ resets 1d")).toBe("#3fb950");
       cleanup();
     } finally {
       await testRenderer.dispose();
@@ -352,7 +352,7 @@ describe("compact mode", () => {
       const lines = nonEmptyLines(testRenderer.captureCharFrame());
       expect(lines).toHaveLength(2);
       expect(lines[0]).toContain("100% ✖");
-      expect(spanColor(testRenderer.captureSpans(), "100% ✖")).toBe("#ff0000");
+      expect(spanColor(testRenderer.captureSpans(), "100% ✖")).toBe("#f85149");
       cleanup();
     } finally {
       await testRenderer.dispose();
@@ -378,8 +378,8 @@ describe("compact mode", () => {
       expect(lines).toHaveLength(2);
       expect(lines[1]).toBe("5-hour window ✖ limit reached");
       const spans = testRenderer.captureSpans();
-      expect(spanColor(spans, "5-hour window")).toBe("#ffffff");
-      expect(spanColor(spans, "✖ limit reached")).toBe("#ff0000");
+      expect(spanColor(spans, "5-hour window")).toBe("#c9d1d9");
+      expect(spanColor(spans, "✖ limit reached")).toBe("#f85149");
       cleanup();
     } finally {
       await testRenderer.dispose();
@@ -476,19 +476,19 @@ describe("pace mode", () => {
       expect(lines.join("\n")).not.toContain("OpenCode Go");
 
       const spans = testRenderer.captureSpans();
-      expect(spanColor(spans, "25% ")).toBe("#00ff00");
-      expect(spanColor(spans, "95% ")).toBe("#ffff00");
-      expect(spanColor(spans, "66% ")).toBe("#00ff00");
+      expect(spanColor(spans, "25% ")).toBe("#3fb950");
+      expect(spanColor(spans, "95% ")).toBe("#d29922");
+      expect(spanColor(spans, "66% ")).toBe("#3fb950");
 
       const rollingColors = thickColors(lineSpans(spans, "5-hour window"));
-      expect(rollingColors).toContain("#00ff00");
-      expect(rollingColors).toContain("#808080");
-      expect(rollingColors).not.toContain("#ffff00");
+      expect(rollingColors).toContain("#3fb950");
+      expect(rollingColors).toContain("#8b949e");
+      expect(rollingColors).not.toContain("#d29922");
 
       const weeklyColors = thickColors(lineSpans(spans, "Weekly"));
-      expect(weeklyColors).toContain("#00ff00");
-      expect(weeklyColors).toContain("#ffff00");
-      expect(weeklyColors).not.toContain("#808080");
+      expect(weeklyColors).toContain("#3fb950");
+      expect(weeklyColors).toContain("#d29922");
+      expect(weeklyColors).not.toContain("#8b949e");
 
       cleanup();
     } finally {
@@ -521,11 +521,11 @@ describe("pace mode", () => {
       expect(lines[2]).toContain("✖ limit reached");
 
       const spans = testRenderer.captureSpans();
-      expect(spanColor(spans, "✖ limit reached")).toBe("#ff0000");
+      expect(spanColor(spans, "✖ limit reached")).toBe("#f85149");
       const monthlySpans = lineSpans(spans, "Monthly");
       const bar = monthlySpans.find((span) => span.text.includes("━"));
       expect(bar).toBeDefined();
-      expect(colorOf(bar as CapturedSpan)).toBe("#ff0000");
+      expect(colorOf(bar as CapturedSpan)).toBe("#f85149");
       expect(monthlySpans.map((span) => span.text).join("")).not.toContain("─");
 
       cleanup();
