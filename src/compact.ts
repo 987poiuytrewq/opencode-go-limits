@@ -48,6 +48,17 @@ export interface CompactRows {
   readonly detail: CompactDetailRow;
 }
 
+/** Green filled circle shown in place of the detailed rows while all is well. */
+export const COMPACT_HEALTHY_INDICATOR = "●";
+
+/**
+ * A compact sidebar view. Healthy usage collapses to a single summary row;
+ * every other state keeps the two-row summary plus detail.
+ */
+export type CompactView =
+  | { readonly kind: "healthy"; readonly summary: CompactRow }
+  | { readonly kind: "detail"; readonly rows: CompactRows };
+
 const TITLE = "OpenCode Go";
 const MONTHLY = LIMITS.find(({ id }) => id === "monthly") as {
   readonly id: "monthly";
@@ -252,6 +263,40 @@ export function formatCompactStatus(usage: GoUsage, now: number): CompactRows {
       status,
     },
   };
+}
+
+/**
+ * Whether all three meters are healthy: none is limited or at/over 100%, none
+ * is at/over 80%, and none is projected to run out before it resets. Invalid
+ * percentages are treated as unhealthy so they never hide the detailed rows.
+ */
+export function isCompactHealthy(usage: GoUsage, now: number): boolean {
+  return LIMITS.every(({ id }) => {
+    const meter = usage[id];
+    if (
+      meter.limited ||
+      !Number.isFinite(meter.percent) ||
+      meter.percent >= 80
+    ) {
+      return false;
+    }
+    return estimateRunout(id, meter, now).kind !== "estimate";
+  });
+}
+
+/**
+ * Build the compact view for fetched usage, collapsing healthy data to a
+ * single title-and-indicator row and keeping the detailed two rows whenever a
+ * meter needs attention.
+ */
+export function formatCompactView(usage: GoUsage, now: number): CompactView {
+  if (isCompactHealthy(usage, now)) {
+    return {
+      kind: "healthy",
+      summary: { text: COMPACT_HEALTHY_INDICATOR, tone: "ok" },
+    };
+  }
+  return { kind: "detail", rows: formatCompactStatus(usage, now) };
 }
 
 /** Two-row compact status shown while the first request is in flight. */

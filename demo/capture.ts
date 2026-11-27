@@ -31,7 +31,6 @@ process.env.TZ = "UTC";
 
 const FIXED_NOW = Date.UTC(2026, 10, 27, 12, 45, 0);
 const SESSION_ID = "ses_demo_sidebar";
-const DAY_MS = 24 * 60 * 60_000;
 
 interface DemoScenario {
   readonly mode: "expanded" | "compact" | "pace";
@@ -48,8 +47,8 @@ interface DemoScenario {
 }
 
 const compactBase = usageAt(FIXED_NOW, {
-  rolling: 70,
-  weekly: 10,
+  rolling: 10,
+  weekly: 20,
   monthly: 66,
 });
 const expandedBase = usageAt(FIXED_NOW, {
@@ -104,38 +103,38 @@ const SCENARIOS: readonly DemoScenario[] = [
     },
   },
   {
+    // Compact: all three meters are healthy, so the sidebar is one line.
     mode: "compact",
     width: 64,
-    height: 3,
-    usage: {
-      rolling: {
-        ...compactBase.rolling,
-        resetsAt: FIXED_NOW + 1.5 * 60 * 60_000,
-      },
-      weekly: compactBase.weekly,
-      monthly: {
-        ...compactBase.monthly,
-        resetsAt: FIXED_NOW + 5 * DAY_MS,
-      },
-    },
+    height: 2,
+    usage: compactBase,
     output: join(import.meta.dir, "compact.svg"),
     title:
-      "OpenCode Go compact sidebar with a bold title, a right-aligned monthly percentage, and a projected 5-hour runout",
-    validate(lines, charFrame) {
+      "OpenCode Go compact sidebar with a bold title and a green healthy indicator",
+    validate(lines, charFrame, captured) {
       if (
-        lines.length !== 2 ||
+        lines.length !== 1 ||
         !lines[0]?.startsWith("OpenCode Go") ||
-        !lines[0]?.endsWith("66%") ||
-        lines[0]?.includes("Monthly") ||
+        !lines[0]?.endsWith("●") ||
+        lines[0]?.includes("%") ||
         lines[0]?.includes("⚠") ||
         lines[0]?.includes("✖") ||
-        lines[1] !== "5-hour  ⚠ 14:15" ||
-        !charFrame.includes("66%") ||
-        !charFrame.includes("5-hour  ⚠ 14:15") ||
+        !charFrame.includes("●") ||
         !charFrame.includes("OpenCode Go")
       ) {
         throw new Error(
           `[compact] Unexpected compact rows: ${JSON.stringify(lines)} (frame: ${JSON.stringify(charFrame)})`,
+        );
+      }
+
+      const fills = new Set(
+        captured.lines.flatMap((line) =>
+          line.spans.map((span) => hexColor(span.fg)),
+        ),
+      );
+      if (!fills.has("#3fb950")) {
+        throw new Error(
+          `[compact] Expected the healthy indicator color #3fb950 in: ${JSON.stringify([...fills])}`,
         );
       }
     },
