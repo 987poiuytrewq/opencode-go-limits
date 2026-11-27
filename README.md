@@ -43,9 +43,9 @@ percentage, then the most urgent short-window status:
 ## Features
 
 - **All three Go meters** in one sidebar panel: 5-hour, weekly, and monthly.
-- **Pace view by default:** a bold title plus one composite bar per meter,
-  comparing usage with the elapsed portion of the 5-hour, weekly, or monthly
-  window.
+- **Pace view by default:** a bold title plus one row per meter with a fixed
+  label column, a composite bar comparing usage with the elapsed portion of the
+  5-hour, weekly, or monthly window, and a right-aligned percentage.
 - **Optional expanded mode:** all three meters as two-line bars with the
   percentage used, a responsive `━` / `─` progress bar, and a reset countdown.
 - **Optional compact mode:** two rows with a bold title, the right-aligned
@@ -168,22 +168,25 @@ up a queue of requests. The plugin has no manual refresh command; if you change
 ### Pace mode (default)
 
 Pace mode is the default, so it needs no configuration. It renders four rows: a
-bold **OpenCode Go** title, then one row per Go window. Each meter row shows the
-label, the percentage used, and one composite bar that compares usage with how
-much of the window has elapsed:
+bold **OpenCode Go** title, then one row per Go window. Each meter row reserves a
+fixed label column, then shows one composite bar that compares usage with how
+much of the window has elapsed, then a right-aligned percentage at the sidebar's
+right edge:
 
 ```text
 OpenCode Go
-5-hour         25% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━─────────
-Weekly         95% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━──
-Monthly       100% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5-hour        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━───────── 25%
+Weekly        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━── 95%
+Monthly       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━100%
 ```
 
 Set `"mode": "pace"` explicitly if you prefer a self-documenting config.
 
-Percentages are right-aligned in a fixed-width column wide enough for `100%`,
-so every composite bar starts at the same horizontal position even when one
-meter is at three digits.
+Every row reserves the same label column and the same four-character percentage
+field, so all three bars start and end on the same columns and every percentage
+is right-aligned as `  5%`, ` 25%`, or `100%`. At the 64-column sidebar width used
+by the sample, the label column is 14 cells, the bar is 46 cells, and the
+percentage field is 4 cells.
 
 The bar has four segment roles:
 
@@ -365,7 +368,7 @@ breakdowns and **Settings › Billing** for billing and balance; members can ope
 | Usage looks stale | The panel refreshes once per `refreshMs` (60 seconds by default) while the TUI is running. Lower `refreshMs` for a faster cadence, down to 15 seconds, then reload. |
 | `refreshMs` has no effect | Put `options` on the matching plugin entry in the global `cli.json`, not in `opencode.json`, and make sure the `package` value names the same package or clone. Non-numeric values fall back to 60 seconds. |
 | The monthly warning date looks wrong | Monthly runouts assume a calendar-month cycle. Go resets the monthly allowance when the paid period renews, so treat the monthly warning as an estimate. |
-| The bars look short | The bar uses the sidebar's measured width minus the percentage prefix, with a one-column minimum. Widen the sidebar to give the bars more room. |
+| The bars look short | The bar uses the sidebar's measured width minus the columns reserved for its label and percentage, with a one-column minimum. Widen the sidebar to give the bars more room. |
 | The compact rows are cut off | Compact mode clips rather than wraps at narrow sidebar widths. Widen the sidebar if the monthly summary or short-window detail does not fit. |
 | The pace rows are cut off | Pace mode also clips rather than wraps. Widen the sidebar if a label, percentage, or bar does not fit. |
 | `mode` is ignored | Use the exact string `"pace"`, `"expanded"`, or `"compact"` in `options` on the plugin entry in `cli.json`. Any other value falls back to `"pace"`, and you must reload OpenCode after changing it. |
