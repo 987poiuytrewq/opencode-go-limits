@@ -1,12 +1,16 @@
 # OpenCode Go Limits
 
 [![CI](https://github.com/987poiuytrewq/opencode-go-limits/actions/workflows/ci.yml/badge.svg)](https://github.com/987poiuytrewq/opencode-go-limits/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/opencode-go-usage-sidebar.svg)](https://www.npmjs.com/package/opencode-go-usage-sidebar)
 
 A TUI-only [OpenCode](https://opencode.ai) plugin that shows your OpenCode Go
 usage in the session sidebar. It renders the rolling 5-hour, weekly, and
 monthly meters as progress bars, with the percentage used, a reset countdown,
 and an estimated runout warning when usage is on course to hit a limit before
 it resets.
+
+The npm package is `opencode-go-usage-sidebar`. The GitHub repository keeps the
+name [opencode-go-limits](https://github.com/987poiuytrewq/opencode-go-limits).
 
 The plugin is deliberately small: it reads the usage meters that OpenCode
 already has access to, follows your active OpenCode theme, and does not store or
@@ -40,11 +44,37 @@ display API keys, token spend, or billing details.
 - **[Bun](https://bun.sh) 1.4.4** to install dependencies from source and to run
   the tests. OpenCode provides the runtime for the plugin itself.
 
-## Install from source
+## Install
 
 This is a TUI-only package: its `package.json` exports a `./tui` entry and has
-no server entry. OpenCode loads TUI-only plugins from the global CLI config, not
-from `opencode.json`.
+no server entry. OpenCode loads TUI-only plugins from the global CLI config
+(`cli.json`), not from `opencode.json`.
+
+### From npm
+
+Add the package to `~/.config/opencode/cli.json` (or
+`$XDG_CONFIG_HOME/opencode/cli.json` when `XDG_CONFIG_HOME` is set):
+
+```json
+{
+  "$schema": "https://opencode.ai/v2/cli.json",
+  "plugins": ["opencode-go-usage-sidebar"]
+}
+```
+
+Or let the OpenCode CLI install and register it:
+
+```sh
+opencode plugin add opencode-go-usage-sidebar
+```
+
+Then run `/reload` in the TUI, or restart OpenCode. The **OpenCode Go** panel is
+appended to the session sidebar.
+
+The CLI config is global; there is no project-local CLI config file. If the
+panel does not appear, see [Troubleshooting](#troubleshooting).
+
+### From a local checkout
 
 1. Clone the repository and install its dependencies:
 
@@ -72,9 +102,6 @@ from `opencode.json`.
 3. Run `/reload` in the TUI, or restart OpenCode. The **OpenCode Go** panel is
    appended to the session sidebar.
 
-The CLI config is global; there is no project-local CLI config file. If the
-panel does not appear, see [Troubleshooting](#troubleshooting).
-
 ## Configuration
 
 Options go in the same plugin entry, under `options`. Every option is optional:
@@ -84,7 +111,7 @@ Options go in the same plugin entry, under `options`. Every option is optional:
   "$schema": "https://opencode.ai/v2/cli.json",
   "plugins": [
     {
-      "package": "/absolute/path/to/opencode-go-limits",
+      "package": "opencode-go-usage-sidebar",
       "options": {
         "refreshMs": 30000
       }
@@ -92,6 +119,9 @@ Options go in the same plugin entry, under `options`. Every option is optional:
   ]
 }
 ```
+
+For a local checkout, keep the object entry but point `package` at the clone's
+absolute path instead of the npm package name.
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -176,11 +206,11 @@ breakdowns and **Settings › Billing** for billing and balance; members can ope
 
 | You see | What to do |
 | --- | --- |
-| No **OpenCode Go** panel | Run `opencode plugin list` to confirm the plugin is listed and active rather than failed or skipped. Confirm the `package` value in `cli.json` is the absolute path to the clone root (the directory containing `package.json`) and that `bun install` has run there. Then run `/reload` or restart OpenCode. Load failures are also written to `~/.local/share/opencode/log/opencode.log`. |
+| No **OpenCode Go** panel | Run `opencode plugin list` to confirm the plugin is listed and active rather than failed or skipped. Confirm the entry in `cli.json` names `opencode-go-usage-sidebar` (or, for a local checkout, the absolute path to the clone root, the directory containing `package.json`). For a local checkout, also confirm `bun install` has run there. Then run `/reload` or restart OpenCode. Load failures are also written to `~/.local/share/opencode/log/opencode.log`. |
 | **OpenCode Go usage is unavailable for this workspace** | OpenCode returned no Go meters. Confirm the workspace has an active OpenCode Go subscription and that OpenCode is signed in to that workspace. A workspace without Go has no allowance to display. |
 | A network, authentication, or endpoint error appears in the panel | The panel shows the error message from the usage request. Check your connection and OpenCode sign-in, then wait for the next refresh. If it persists, check the OpenCode log. |
 | Usage looks stale | The panel refreshes once per `refreshMs` (60 seconds by default) while the TUI is running. Lower `refreshMs` for a faster cadence, down to 15 seconds, then reload. |
-| `refreshMs` has no effect | Put `options` on the matching plugin entry in the global `cli.json`, not in `opencode.json`, and make sure the `package` value points at the same clone. Non-numeric values fall back to 60 seconds. |
+| `refreshMs` has no effect | Put `options` on the matching plugin entry in the global `cli.json`, not in `opencode.json`, and make sure the `package` value names the same package or clone. Non-numeric values fall back to 60 seconds. |
 | The monthly warning date looks wrong | Monthly runouts assume a calendar-month cycle. Go resets the monthly allowance when the paid period renews, so treat the monthly warning as an estimate. |
 | The bars look short | The bar uses the sidebar's measured width minus the percentage prefix, with a one-column minimum. Widen the sidebar to give the bars more room. |
 
@@ -280,3 +310,59 @@ The integration tests use a path-safe Solid transform preload in
 | `test/preload.ts` | Bun preload that applies the OpenTUI Solid transform. |
 | `Makefile` | Canonical install, format, typecheck, test, CI, and E2E gates. |
 | `.github/workflows/ci.yml` | Host-free checks plus the OpenCode 2.2.7/2.3.2/2.4.2 E2E matrix on Bun 1.4.4. |
+| `.github/workflows/release.yml` | Guarded, provenance-signed npm publish for non-prerelease GitHub releases. |
+| `LICENSE` | MIT license text for the package and repository. |
+
+## Releasing
+
+Releases publish the npm package `opencode-go-usage-sidebar` from
+`.github/workflows/release.yml` when a GitHub release is published. The
+repository name (`opencode-go-limits`) is unchanged; only the npm package name
+is distinct.
+
+The workflow's test job refuses to continue unless all of these hold:
+
+- The GitHub release is not a prerelease.
+- The release tag is exactly `v` followed by the `package.json` version.
+- The `package.json` version has no prerelease suffix.
+- The release commit is reachable from `main`.
+- `make ci` passes.
+- `npm pack --dry-run` succeeds.
+
+Only then does the publish job run `npm publish --access public --provenance`.
+Authentication uses npm trusted publishing (OIDC); the repository stores no
+`NPM_TOKEN`, and the publish job requests `id-token: write` and uses the `npm`
+GitHub environment.
+
+### One-time GitHub and npm setup
+
+npm trusted publishing can only be configured after the package exists. For the
+first release:
+
+1. Bump `version` in `package.json`, merge to `main`, and publish the first
+   version manually from that commit after signing in with 2FA:
+   `npm publish --access public`.
+2. On npmjs.com, open **Packages › opencode-go-usage-sidebar › Settings ›
+   Trusted publishing** and add a **GitHub Actions** publisher with:
+   - Organization or user: `987poiuytrewq`
+   - Repository: `opencode-go-limits`
+   - Workflow filename: `release.yml`
+   - Environment name: `npm`
+   - Allowed action: `npm publish`
+3. In the GitHub repository, open **Settings › Environments** and create an
+   `npm` environment. Add required reviewers or deployment branches there if
+   you want an approval gate. The environment name must match the trusted
+   publisher entry.
+4. Optionally, on npm under **Settings › Publishing access**, require 2FA and
+   disallow tokens. Trusted publishing continues to work because it uses OIDC
+   rather than a long-lived token.
+
+For each later release, bump `package.json`, merge to `main`, then create a
+non-prerelease GitHub release whose tag is `v<version>` (for example,
+`v0.2.0`). The workflow publishes the package with provenance.
+
+To inspect the exact tarball locally before releasing:
+
+```sh
+npm pack --dry-run
+```
