@@ -39,6 +39,8 @@ interface DemoScenario {
   readonly usage: ReturnType<typeof usageAt>;
   readonly output: string;
   readonly title: string;
+  /** Whether the heading renders bold; defaults to `true` like expanded/pace. */
+  readonly titleBold?: boolean;
   readonly validate: (
     lines: readonly string[],
     charFrame: string,
@@ -110,7 +112,8 @@ const SCENARIOS: readonly DemoScenario[] = [
     usage: compactBase,
     output: join(import.meta.dir, "compact.svg"),
     title:
-      "OpenCode Go compact sidebar with a bold title and a green healthy indicator",
+      "OpenCode Go compact sidebar with a normal-text title and a green healthy indicator",
+    titleBold: false,
     validate(lines, charFrame, captured) {
       if (
         lines.length !== 1 ||
@@ -504,9 +507,10 @@ async function main(): Promise<void> {
           charFrame,
           captured,
         );
-        if (hasBoldTitle(captured) === false) {
+        const expectedBold = scenario.titleBold ?? true;
+        if (hasBoldTitle(captured) !== expectedBold) {
           throw new Error(
-            `[${scenario.mode}] Expected the OpenCode Go title span to be bold`,
+            `[${scenario.mode}] Expected the OpenCode Go title span to be ${expectedBold ? "bold" : "normal"}`,
           );
         }
 

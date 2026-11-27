@@ -137,6 +137,8 @@ function QuotaWidget(props: { refreshMs: number; mode: SidebarMode }) {
     return formatCompactView(data, Date.now());
   };
 
+  const compactTitleBold = (): boolean => compactView().kind !== "healthy";
+
   const compactSummary = (): CompactRow => {
     const view = compactView();
     return view.kind === "healthy" ? view.summary : view.rows.summary;
@@ -297,7 +299,12 @@ function QuotaWidget(props: { refreshMs: number; mode: SidebarMode }) {
           alignItems="center"
           width="100%"
         >
-          <text fg={context.theme.text.base} attributes={TextAttributes.BOLD}>
+          <text
+            fg={context.theme.text.base}
+            attributes={
+              compactTitleBold() ? TextAttributes.BOLD : TextAttributes.NONE
+            }
+          >
             {compactTitle()}
           </text>
           <text fg={toneColor(compactSummary().tone)}>

@@ -34,12 +34,12 @@ reset countdowns:
 
 *Expanded mode, captured from deterministic fake usage data.*
 
-Compact mode is a single line while all three meters are healthy: a bold
-**OpenCode Go** title on the left and a green `●` indicator on the right. When
-any meter is warning or critical, it expands to two rows with the monthly
-percentage and the most urgent short-window status:
+Compact mode is a single line while all three meters are healthy: a normal-text
+`OpenCode Go` title on the left and a green `●` indicator on the right. When
+any meter is warning or critical, it expands to two rows with a bold title, the
+monthly percentage, and the most urgent short-window status:
 
-![OpenCode Go compact sidebar showing a bold title and a green healthy indicator](demo/compact.svg)
+![OpenCode Go compact sidebar showing a normal-text title and a green healthy indicator](demo/compact.svg)
 
 *Compact mode in the healthy state, captured from deterministic fake usage data.*
 
@@ -51,9 +51,10 @@ percentage and the most urgent short-window status:
   window.
 - **Optional expanded mode:** all three meters as two-line bars with the
   percentage used, a responsive `━` / `─` progress bar, and a reset countdown.
-- **Optional compact mode:** one healthy status line with a bold title and a
-  green `●`, expanding to two rows with the monthly percentage and the most
-  urgent short-window meter when anything needs attention.
+- **Optional compact mode:** one healthy status line with a normal-text title
+  and a green `●`, expanding to two rows with a bold title, the monthly
+  percentage, and the most urgent short-window meter when anything needs
+  attention.
 - **Runout warnings** projected from average usage since the current window
   began, shown in expanded mode.
 - **Theme-aware colors:** success, warning, and error colors from the active
@@ -162,7 +163,7 @@ absolute path instead of the npm package name.
 | Option | Default | Description |
 | --- | --- | --- |
 | `refreshMs` | `60000` | How often the sidebar reloads usage, in milliseconds. Values below `15000` are raised to 15 seconds; values above `1800000` are lowered to 30 minutes. A value that is not a finite number falls back to the default. |
-| `mode` | `"pace"` | Sidebar layout. `"pace"` shows a bold title plus exactly three one-line rows with a composite usage-versus-elapsed bar per meter. `"expanded"` shows all three meters as two-line bars with reset countdowns and runout warnings. `"compact"` shows a single bold title and green healthy indicator while all meters are healthy, and expands to two rows with the monthly percentage plus the most urgent 5-hour or weekly status when any meter is warning or critical. Any value other than the exact strings `"pace"`, `"expanded"`, or `"compact"` falls back to `"pace"`. |
+| `mode` | `"pace"` | Sidebar layout. `"pace"` shows a bold title plus exactly three one-line rows with a composite usage-versus-elapsed bar per meter. `"expanded"` shows all three meters as two-line bars with reset countdowns and runout warnings. `"compact"` shows a single normal-text title and green healthy indicator while all meters are healthy, and expands to two rows with a bold title, the monthly percentage, plus the most urgent 5-hour or weekly status when any meter is warning or critical. Any value other than the exact strings `"pace"`, `"expanded"`, or `"compact"` falls back to `"pace"`. |
 
 The interval starts when the sidebar panel mounts. Refreshes are skipped while
 a previous request is still running, so a slow or offline server cannot build
@@ -263,19 +264,20 @@ Monthly                         7d
 ### Compact mode
 
 Set `"mode": "compact"` to show a compact status line. While all three meters
-are healthy, the panel is a single row with a bold **OpenCode Go** title on the
-left and a green `●` indicator on the right:
+are healthy, the panel is a single row with a normal-text `OpenCode Go` title
+on the left and a green `●` indicator on the right:
 
 ```text
 OpenCode Go                                                    ●
 ```
 
-A meter is healthy when it is not limited, below 80%, and not projected to run
-out before it resets. When any meter is warning or critical, compact mode keeps
-the detailed two-row output. The first row shows the bold title and a
-right-aligned monthly percentage; the second row shows the most urgent
-short-window meter (5-hour or weekly), with its status symbol and either a
-projected runout or reset detail:
+In this healthy state the title keeps the theme's base text color and normal
+weight; only the indicator is green. A meter is healthy when it is not limited,
+below 80%, and not projected to run out before it resets. When any meter is
+warning or critical, compact mode keeps the detailed two-row output. The first
+row shows the bold title and a right-aligned monthly percentage; the second
+row shows the most urgent short-window meter (5-hour or weekly), with its
+status symbol and either a projected runout or reset detail:
 
 ```text
 OpenCode Go                                                  66%

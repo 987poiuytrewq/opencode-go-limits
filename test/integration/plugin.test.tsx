@@ -281,7 +281,7 @@ function thickColors(spans: CapturedSpan[]): Set<string> {
 }
 
 describe("compact mode", () => {
-  test("collapses to a single bold title and green healthy indicator when every meter is healthy", async () => {
+  test("collapses to a single normal-text title and green healthy indicator when every meter is healthy", async () => {
     const testRenderer = await createTestRenderer({ width: 64, height: 4 });
     const fixedNow = new Date(2026, 10, 27, 12, 45, 0, 0).getTime();
     const nowSpy = spyOn(Date, "now").mockReturnValue(fixedNow);
@@ -303,7 +303,8 @@ describe("compact mode", () => {
       expect(lines[0]).not.toContain("Weekly");
 
       const spans = testRenderer.captureSpans();
-      expect(spanBold(spans, "OpenCode Go")).toBe(true);
+      expect(spanBold(spans, "OpenCode Go")).toBe(false);
+      expect(spanColor(spans, "OpenCode Go")).toBe("#c9d1d9");
       expect(spanColor(spans, "●")).toBe("#3fb950");
       cleanup();
     } finally {
