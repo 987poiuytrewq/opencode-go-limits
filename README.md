@@ -26,6 +26,8 @@ display API keys, token spend, or billing details.
   began.
 - **Theme-aware colors:** success, warning, and error colors from the active
   OpenCode theme.
+- **Optional compact mode** that collapses the panel to one line and highlights
+  only the most urgent meter.
 - **Configurable refresh cadence** with safe bounds, so a typo in the config
   cannot hammer the server.
 - **No separate credentials:** the plugin uses OpenCode's client and the
@@ -113,7 +115,8 @@ Options go in the same plugin entry, under `options`. Every option is optional:
     {
       "package": "opencode-go-usage-limits",
       "options": {
-        "refreshMs": 30000
+        "refreshMs": 30000,
+        "mode": "expanded"
       }
     }
   ]
@@ -126,15 +129,52 @@ absolute path instead of the npm package name.
 | Option | Default | Description |
 | --- | --- | --- |
 | `refreshMs` | `60000` | How often the sidebar reloads usage, in milliseconds. Values below `15000` are raised to 15 seconds; values above `1800000` are lowered to 30 minutes. A value that is not a finite number falls back to the default. |
+| `mode` | `"expanded"` | Sidebar layout. `"expanded"` shows all three meters as two-line bars. `"compact"` shows a single line for the most urgent meter. Any value other than `"compact"` falls back to `"expanded"`. |
 
 The interval starts when the sidebar panel mounts. Refreshes are skipped while
 a previous request is still running, so a slow or offline server cannot build
 up a queue of requests. The plugin has no manual refresh command; if you change
 `refreshMs`, reload OpenCode to apply the new value.
 
+### Compact mode
+
+Set `"mode": "compact"` to collapse the panel to one line. The line always shows
+a symbol, a status word, the selected meter, its percentage, and either the
+reset countdown or the projected runout:
+
+```text
+OpenCode Go ⚠ WARN · Monthly 80% · resets 7d
+```
+
+Only the most urgent meter is shown:
+
+- **`✖ LIMIT` (critical):** a meter the API marks as limited, or one at 100% or
+  more. If several meters are critical, the highest percentage wins.
+- **`⚠ WARN` (warning):** a meter at 80% or more, or one projected to run out
+  before it resets. Among warnings, the earliest projected runout wins; when no
+  warning has a projection, the highest percentage wins.
+- **`✓ OK`:** none of the meters is urgent. The highest percentage is shown.
+
+The symbol and status word carry the same meaning as the theme color, so the
+mode is readable without color. The line uses the theme's error, warning, or
+success color for the selected severity.
+
+Compact mode also keeps its other states on one line and distinct from each
+other:
+
+```text
+OpenCode Go … loading limits
+OpenCode Go – Go usage unavailable
+OpenCode Go ✖ error · limits endpoint offline
+```
+
+Loading, unavailable, and request-error states use muted or error theme colors
+and never mix with a meter status. A request error takes precedence over any
+stale meter values from an earlier refresh.
+
 ## Reading the panel
 
-Each meter takes two lines:
+The default `expanded` mode shows each meter on two lines:
 
 ```text
 5-hour window               4h 42m
@@ -213,6 +253,8 @@ breakdowns and **Settings › Billing** for billing and balance; members can ope
 | `refreshMs` has no effect | Put `options` on the matching plugin entry in the global `cli.json`, not in `opencode.json`, and make sure the `package` value names the same package or clone. Non-numeric values fall back to 60 seconds. |
 | The monthly warning date looks wrong | Monthly runouts assume a calendar-month cycle. Go resets the monthly allowance when the paid period renews, so treat the monthly warning as an estimate. |
 | The bars look short | The bar uses the sidebar's measured width minus the percentage prefix, with a one-column minimum. Widen the sidebar to give the bars more room. |
+| The compact line is cut off | Compact mode clips rather than wraps at narrow sidebar widths. Widen the sidebar if the selected meter, percentage, and countdown do not fit. |
+| `mode` stays expanded | Use the exact string `"compact"` in `options` on the plugin entry in `cli.json`. Any other value falls back to `"expanded"`, and you must reload OpenCode after changing it. |
 
 ## How it works
 
@@ -221,7 +263,8 @@ registers an append claim for OpenCode's documented `sidebar.content` slot.
 When the slot renders, the widget:
 
 1. Calls `context.client.experimental.usage.limits()` for the current location.
-2. Displays the returned `go.rolling`, `go.weekly`, and `go.monthly` meters.
+2. Displays the returned `go.rolling`, `go.weekly`, and `go.monthly` meters, or
+   the single most urgent meter when `mode` is `"compact"`.
 3. Refreshes on the configured interval and listens for renderer resize and
    frame events to remeasure the bar.
 4. Removes its timer and renderer listeners when the slot is unloaded.
@@ -246,8 +289,8 @@ OpenCode loads it through the `./tui` export.
 | `make test` | Formatting, typecheck, unit tests, and integration tests. No host tools required. |
 | `make format-check` | Formatting for the checked source and config files, and a strict-JSON check of the first JSON example in this README. |
 | `make typecheck` | `tsc --noEmit` over `src` and `test`. |
-| `make test-unit` | Unit tests for settings and usage formatting/estimation. |
-| `make test-integration` | Renders the plugin in a test OpenTUI renderer and covers slot registration, data loading, error states, refresh, and cleanup. |
+| `make test-unit` | Unit tests for settings, compact status selection/formatting, and usage formatting/estimation. |
+| `make test-integration` | Renders the plugin in a test OpenTUI renderer and covers slot registration, expanded and compact layouts, data loading, error states, refresh, and cleanup. |
 | `make test-e2e` | Opt-in real-host smoke test: launches OpenCode in tmux with an isolated HOME/XDG tree and checks that the session sidebar renders the **OpenCode Go** heading. |
 | `make ci-tools` | CI-only host setup: installs tmux and `@opencode/cli@$OPENCODE_VERSION` for the E2E matrix. |
 | `make verify-version` | CI-only guard that `$(OPENCODE_BIN) --version` matches `OPENCODE_VERSION`. |
@@ -302,9 +345,10 @@ The integration tests use a path-safe Solid transform preload in
 | Path | Contents |
 | --- | --- |
 | `src/tui.tsx` | Plugin definition, `sidebar.content` slot, usage requests, refresh timer, and Solid UI. |
-| `src/settings.ts` | `refreshMs` default, fallback, and clamping. |
+| `src/settings.ts` | `refreshMs` and `mode` defaults, fallbacks, and clamping. |
+| `src/compact.ts` | One-line compact status selection and formatting. |
 | `src/usage.ts` | Pure formatting and runout-estimation helpers. |
-| `test/unit/` | Unit tests for settings and usage helpers. |
+| `test/unit/` | Unit tests for settings, compact status, and usage helpers. |
 | `test/integration/` | Mock OpenCode host and TUI rendering tests. |
 | `test/e2e/` | Opt-in real-host tmux smoke test and its isolated fixtures. |
 | `test/preload.ts` | Bun preload that applies the OpenTUI Solid transform. |

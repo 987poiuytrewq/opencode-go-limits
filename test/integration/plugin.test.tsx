@@ -200,3 +200,142 @@ describe("OpenCode Go limits sidebar plugin", () => {
     }
   });
 });
+
+function nonEmptyLines(frame: string): string[] {
+  return frame.split("\n").filter((line) => line.trim().length > 0);
+}
+
+describe("compact mode", () => {
+  test("keeps the expanded layout when mode is not configured", async () => {
+    const testRenderer = await createTestRenderer({ width: 64, height: 14 });
+    try {
+      const host = createMockHost({
+        renderer: testRenderer.renderer,
+        usage: usageAt(Date.now()),
+      });
+      const cleanup = await mountHost(host);
+      await testRenderer.flush();
+
+      const lines = nonEmptyLines(testRenderer.captureCharFrame());
+      expect(lines.length).toBeGreaterThan(1);
+      expect(testRenderer.captureCharFrame()).toContain("5-hour window");
+      expect(testRenderer.captureCharFrame()).toContain("━━");
+      cleanup();
+    } finally {
+      await testRenderer.dispose();
+    }
+  });
+
+  test("renders the most urgent warning as one line", async () => {
+    const testRenderer = await createTestRenderer({ width: 64, height: 6 });
+    try {
+      const host = createMockHost({
+        renderer: testRenderer.renderer,
+        usage: usageAt(Date.now()),
+        options: { mode: "compact" },
+      });
+      const cleanup = await mountHost(host);
+      await testRenderer.flush();
+
+      const lines = nonEmptyLines(testRenderer.captureCharFrame());
+      expect(lines).toHaveLength(1);
+      expect(lines[0]).toContain("OpenCode Go");
+      expect(lines[0]).toContain("⚠ WARN");
+      expect(lines[0]).toContain("Monthly 80%");
+      expect(lines[0]).not.toContain("5-hour window");
+      cleanup();
+    } finally {
+      await testRenderer.dispose();
+    }
+  });
+
+  test("renders a limited meter as one critical line", async () => {
+    const testRenderer = await createTestRenderer({ width: 64, height: 6 });
+    try {
+      const now = Date.now();
+      const base = usageAt(now);
+      const host = createMockHost({
+        renderer: testRenderer.renderer,
+        usage: {
+          ...base,
+          monthly: { ...base.monthly, percent: 100, limited: true },
+        },
+        options: { mode: "compact" },
+      });
+      const cleanup = await mountHost(host);
+      await testRenderer.flush();
+
+      const lines = nonEmptyLines(testRenderer.captureCharFrame());
+      expect(lines).toHaveLength(1);
+      expect(lines[0]).toContain("✖ LIMIT");
+      expect(lines[0]).toContain("Monthly 100%");
+      cleanup();
+    } finally {
+      await testRenderer.dispose();
+    }
+  });
+
+  test("keeps unavailable and request-error states distinct on one line", async () => {
+    const unavailableRenderer = await createTestRenderer({
+      width: 64,
+      height: 6,
+    });
+    const errorRenderer = await createTestRenderer({ width: 64, height: 6 });
+    try {
+      const unavailableHost = createMockHost({
+        renderer: unavailableRenderer.renderer,
+        unavailable: true,
+        options: { mode: "compact" },
+      });
+      const unavailableCleanup = await mountHost(unavailableHost);
+      await unavailableRenderer.flush();
+      const unavailableLines = nonEmptyLines(
+        unavailableRenderer.captureCharFrame(),
+      );
+      expect(unavailableLines).toHaveLength(1);
+      expect(unavailableLines[0]).toContain("– Go usage unavailable");
+      expect(unavailableLines[0]).not.toContain("error");
+
+      const errorHost = createMockHost({
+        renderer: errorRenderer.renderer,
+        failure: new Error("limits endpoint offline"),
+        options: { mode: "compact" },
+      });
+      const errorCleanup = await mountHost(errorHost);
+      await errorRenderer.flush();
+      const errorLines = nonEmptyLines(errorRenderer.captureCharFrame());
+      expect(errorLines).toHaveLength(1);
+      expect(errorLines[0]).toContain("✖ error");
+      expect(errorLines[0]).toContain("limits endpoint offline");
+      expect(errorLines[0]).not.toContain("unavailable");
+
+      errorCleanup();
+      unavailableCleanup();
+    } finally {
+      await unavailableRenderer.dispose();
+      await errorRenderer.dispose();
+    }
+  });
+
+  test("renders the loading state as one line", async () => {
+    const testRenderer = await createTestRenderer({ width: 64, height: 6 });
+    try {
+      const host = createMockHost({
+        renderer: testRenderer.renderer,
+        hang: true,
+        options: { mode: "compact" },
+      });
+      const cleanup = await mountHost(host);
+      await testRenderer.flush();
+
+      const lines = nonEmptyLines(testRenderer.captureCharFrame());
+      expect(lines).toHaveLength(1);
+      expect(lines[0]).toContain("… loading limits");
+      expect(lines[0]).not.toContain("unavailable");
+      expect(lines[0]).not.toContain("error");
+      cleanup();
+    } finally {
+      await testRenderer.dispose();
+    }
+  });
+});
