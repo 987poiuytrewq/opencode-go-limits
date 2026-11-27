@@ -49,13 +49,7 @@ export function formatRunoutDate(
     const weekday = new Intl.DateTimeFormat("en-US", {
       weekday: "short",
     }).format(date);
-    const time = new Intl.DateTimeFormat("en-US", {
-      hour: "numeric",
-      hour12: true,
-    })
-      .format(date)
-      .replace(/\s/g, "")
-      .toLowerCase();
+    const time = `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
     return `${weekday} ${time}`;
   }
 

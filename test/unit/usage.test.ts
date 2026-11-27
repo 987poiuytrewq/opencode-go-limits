@@ -24,7 +24,7 @@ describe("usage display formatting", () => {
         { kind: "estimate", inMs: weeklyTarget.getTime() - now.getTime() },
         now.getTime(),
       ),
-    ).toBe("Sat 8pm");
+    ).toBe("Sat 20:00");
     expect(
       formatRunoutDate(
         "rolling",
@@ -88,7 +88,7 @@ describe("usage display formatting", () => {
         { kind: "estimate", inMs: lateSaturday.getTime() - now.getTime() },
         now.getTime(),
       ),
-    ).toBe("Sun 12am");
+    ).toBe("Sun 00:00");
   });
 
   test("projects from current usage and elapsed time in a rolling window", () => {

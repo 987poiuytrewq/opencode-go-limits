@@ -228,7 +228,7 @@ Monthly                         7d
 | Meter | Warning format | Example |
 | --- | --- | --- |
 | 5-hour window | Local time, rounded to the nearest 15 minutes | `⚠ 10:45` |
-| Weekly | Local weekday and hour | `⚠ Sat 8pm` |
+| Weekly | Local weekday and 24-hour time, rounded to the nearest hour | `⚠ Sat 20:00` |
 | Monthly | Short UTC date | `⚠ Dec 2` |
 
 ## Runout estimates and display limitations
