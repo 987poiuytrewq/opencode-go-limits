@@ -14,11 +14,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/987poiuytrewq/opencode-go-limits.git"
+    "url": "git+https://github.com/987poiuytrewq/opencode-go-usage-limits.git"
   },
-  "homepage": "https://github.com/987poiuytrewq/opencode-go-limits#readme",
+  "homepage": "https://github.com/987poiuytrewq/opencode-go-usage-limits#readme",
   "bugs": {
-    "url": "https://github.com/987poiuytrewq/opencode-go-limits/issues"
+    "url": "https://github.com/987poiuytrewq/opencode-go-usage-limits/issues"
   },
   "type": "module",
   "exports": {

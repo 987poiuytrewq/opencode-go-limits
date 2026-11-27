@@ -1,6 +1,6 @@
 # OpenCode Go Limits
 
-[![CI](https://github.com/987poiuytrewq/opencode-go-limits/actions/workflows/ci.yml/badge.svg)](https://github.com/987poiuytrewq/opencode-go-limits/actions/workflows/ci.yml)
+[![CI](https://github.com/987poiuytrewq/opencode-go-usage-limits/actions/workflows/ci.yml/badge.svg)](https://github.com/987poiuytrewq/opencode-go-usage-limits/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/opencode-go-usage-limits.svg)](https://www.npmjs.com/package/opencode-go-usage-limits)
 
 A TUI-only [OpenCode](https://opencode.ai) plugin that shows your OpenCode Go
@@ -9,8 +9,8 @@ monthly meters as progress bars, with the percentage used, a reset countdown,
 and an estimated runout warning when usage is on course to hit a limit before
 it resets.
 
-The npm package is `opencode-go-usage-limits`. The GitHub repository keeps the
-name [opencode-go-limits](https://github.com/987poiuytrewq/opencode-go-limits).
+The npm package and GitHub repository are both named
+[opencode-go-usage-limits](https://github.com/987poiuytrewq/opencode-go-usage-limits).
 
 The plugin is deliberately small: it reads the usage meters that OpenCode
 already has access to, follows your active OpenCode theme, and does not store or
@@ -81,8 +81,8 @@ panel does not appear, see [Troubleshooting](#troubleshooting).
 1. Clone the repository and install its dependencies:
 
    ```sh
-   git clone https://github.com/987poiuytrewq/opencode-go-limits.git
-   cd opencode-go-limits
+   git clone https://github.com/987poiuytrewq/opencode-go-usage-limits.git
+   cd opencode-go-usage-limits
    bun install
    ```
 
@@ -95,7 +95,7 @@ panel does not appear, see [Troubleshooting](#troubleshooting).
      "$schema": "https://opencode.ai/v2/cli.json",
      "plugins": [
        {
-         "package": "/absolute/path/to/opencode-go-limits"
+         "package": "/absolute/path/to/opencode-go-usage-limits"
        }
      ]
    }
@@ -360,9 +360,8 @@ The integration tests use a path-safe Solid transform preload in
 ## Releasing
 
 Releases publish the npm package `opencode-go-usage-limits` from
-`.github/workflows/release.yml` when a GitHub release is published. The
-repository name (`opencode-go-limits`) is unchanged; only the npm package name
-is distinct.
+`.github/workflows/release.yml` when a GitHub release is published. The GitHub
+repository and npm package share the name `opencode-go-usage-limits`.
 
 The workflow's test job refuses to continue unless all of these hold:
 
@@ -389,7 +388,7 @@ first release:
 2. On npmjs.com, open **Packages › opencode-go-usage-limits › Settings ›
    Trusted publishing** and add a **GitHub Actions** publisher with:
    - Organization or user: `987poiuytrewq`
-   - Repository: `opencode-go-limits`
+   - Repository: `opencode-go-usage-limits`
    - Workflow filename: `release.yml`
    - Environment name: `npm`
    - Allowed action: `npm publish`
