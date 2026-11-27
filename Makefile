@@ -1,4 +1,4 @@
-.PHONY: install format-check typecheck test test-unit test-integration test-e2e ci ci-tools verify-version e2e-debug
+.PHONY: install format-check typecheck test test-unit test-integration test-e2e ci ci-tools verify-version e2e-debug demo
 
 BUN ?= bun
 OPENCODE_BIN ?= opencode
@@ -8,8 +8,12 @@ install:
 	$(BUN) install --frozen-lockfile
 
 format-check:
-	$(BUN) fmt --check package.json tsconfig.json bunfig.toml .github/workflows/ci.yml .github/workflows/release.yml src test
+	$(BUN) fmt --check package.json tsconfig.json bunfig.toml .github/workflows/ci.yml .github/workflows/release.yml src test demo
 	$(BUN) -e 'const readme = await Bun.file("README.md").text(); const match = readme.match(/```json\s*\n([\s\S]*?)\n\s*```/); if (!match) throw new Error("README strict JSON example not found"); JSON.parse(match[1])'
+
+# Rebuild the committed SVG from the real OpenTUI renderer and fake usage data.
+demo:
+	$(BUN) demo/capture.ts
 
 typecheck:
 	$(BUN) ./node_modules/typescript/bin/tsc --noEmit

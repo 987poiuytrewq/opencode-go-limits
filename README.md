@@ -16,6 +16,11 @@ The plugin is deliberately small: it reads the usage meters that OpenCode
 already has access to, follows your active OpenCode theme, and does not store or
 display API keys, token spend, or billing details.
 
+![OpenCode Go compact sidebar showing a rolling 5-hour window at 86% with a projected runout at 09:45](demo/demo.svg)
+
+*Compact mode, captured from the real OpenTUI renderer with deterministic fake
+usage data.*
+
 ## Features
 
 - **All three Go meters** in one sidebar panel: 5-hour window, weekly, and
@@ -287,8 +292,9 @@ OpenCode loads it through the `./tui` export.
 | Command | Runs |
 | --- | --- |
 | `make test` | Formatting, typecheck, unit tests, and integration tests. No host tools required. |
-| `make format-check` | Formatting for the checked source and config files, and a strict-JSON check of the first JSON example in this README. |
-| `make typecheck` | `tsc --noEmit` over `src` and `test`. |
+| `make format-check` | Formatting for the checked source, demo, and config files, and a strict-JSON check of the first JSON example in this README. |
+| `make typecheck` | `tsc --noEmit` over `src`, `test`, and `demo`. |
+| `make demo` | Renders the compact sidebar through the real OpenTUI test renderer with fake usage data and rewrites `demo/demo.svg`. |
 | `make test-unit` | Unit tests for settings, compact status selection/formatting, and usage formatting/estimation. |
 | `make test-integration` | Renders the plugin in a test OpenTUI renderer and covers slot registration, expanded and compact layouts, data loading, error states, refresh, and cleanup. |
 | `make test-e2e` | Opt-in real-host smoke test: launches OpenCode in tmux with an isolated HOME/XDG tree and checks that the session sidebar renders the **OpenCode Go** heading. |
@@ -352,7 +358,8 @@ The integration tests use a path-safe Solid transform preload in
 | `test/integration/` | Mock OpenCode host and TUI rendering tests. |
 | `test/e2e/` | Opt-in real-host tmux smoke test and its isolated fixtures. |
 | `test/preload.ts` | Bun preload that applies the OpenTUI Solid transform. |
-| `Makefile` | Canonical install, format, typecheck, test, CI, and E2E gates. |
+| `demo/capture.ts` | Deterministic compact-mode capture script for `demo/demo.svg`. |
+| `Makefile` | Canonical install, format, typecheck, test, demo, CI, and E2E gates. |
 | `.github/workflows/ci.yml` | Host-free checks plus the OpenCode 2.2.7/2.3.2/2.4.2 E2E matrix on Bun 1.4.4. |
 | `.github/workflows/release.yml` | Guarded, provenance-signed npm publish for non-prerelease GitHub releases. |
 | `LICENSE` | MIT license text for the package and repository. |
