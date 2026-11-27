@@ -230,10 +230,14 @@ composite bar that compares usage with how much of the window has elapsed:
 
 ```text
 OpenCode Go
-5-hour        25% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━─────────
-Weekly        95% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━──
+5-hour         25% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━─────────
+Weekly         95% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━──
 Monthly       100% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
+
+Percentages are right-aligned in a fixed-width column wide enough for `100%`,
+so every composite bar starts at the same horizontal position even when one
+meter is at three digits.
 
 The bar has four segment roles:
 

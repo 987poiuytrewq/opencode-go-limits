@@ -256,6 +256,17 @@ function lineSpans(spans: CapturedFrame, needle: string): CapturedSpan[] {
   throw new Error(`No rendered line contains ${JSON.stringify(needle)}`);
 }
 
+/** Zero-based column where the first composite bar glyph starts on a line. */
+function barStartColumn(spans: CapturedFrame, needle: string): number {
+  let column = 0;
+  for (const span of lineSpans(spans, needle)) {
+    const offset = span.text.indexOf("━");
+    if (offset >= 0) return column + offset;
+    column += span.width;
+  }
+  throw new Error(`No composite bar on the line containing ${needle}`);
+}
+
 function thickColors(spans: CapturedSpan[]): Set<string> {
   return new Set(
     spans
@@ -517,18 +528,24 @@ describe("pace mode", () => {
       expect(lines).toHaveLength(4);
       expect(lines[0]).toBe("OpenCode Go");
       expect(lines[1]).toContain("5-hour");
-      expect(lines[1]).toContain("25% ");
+      expect(lines[1]).toContain(" 25% ");
       expect(lines[2]).toContain("Weekly");
-      expect(lines[2]).toContain("95% ");
+      expect(lines[2]).toContain(" 95% ");
       expect(lines[3]).toContain("Monthly");
-      expect(lines[3]).toContain("66% ");
+      expect(lines[3]).toContain(" 66% ");
 
       const spans = testRenderer.captureSpans();
       expect(spanBold(spans, "OpenCode Go")).toBe(true);
       expect(spanColor(spans, "OpenCode Go")).toBe("#c9d1d9");
-      expect(spanColor(spans, "25% ")).toBe("#3fb950");
-      expect(spanColor(spans, "95% ")).toBe("#d29922");
-      expect(spanColor(spans, "66% ")).toBe("#3fb950");
+      expect(spanColor(spans, " 25% ")).toBe("#3fb950");
+      expect(spanColor(spans, " 95% ")).toBe("#d29922");
+      expect(spanColor(spans, " 66% ")).toBe("#3fb950");
+
+      const barColumns = ["5-hour", "Weekly", "Monthly"].map((label) =>
+        barStartColumn(spans, label),
+      );
+      expect(new Set(barColumns).size).toBe(1);
+      expect(barColumns[0]).toBe(19);
 
       const rollingColors = thickColors(lineSpans(spans, "5-hour"));
       expect(rollingColors).toContain("#3fb950");

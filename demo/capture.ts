@@ -174,6 +174,16 @@ const SCENARIOS: readonly DemoScenario[] = [
         );
       }
 
+      // All three composite bars must start at the same column. The percentage
+      // column is right-aligned wide enough for 100%, so `25%` gains a leading
+      // space rather than shifting its bar left.
+      const barColumns = lines.slice(1).map((line) => line.indexOf("━"));
+      if (barColumns.some((column) => column < 0 || column !== barColumns[0])) {
+        throw new Error(
+          `[pace] Expected aligned bar starts, got ${JSON.stringify(barColumns)} in ${JSON.stringify(lines)}`,
+        );
+      }
+
       // The composite bars must exercise every semantic fixture color.
       const fills = new Set(
         captured.lines.flatMap((line) =>

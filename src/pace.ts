@@ -1,16 +1,13 @@
-import {
-  LIMITS,
-  formatPercentPrefix,
-  windowStart,
-  type GoUsage,
-  type LimitName,
-} from "./usage";
+import { LIMITS, windowStart, type GoUsage, type LimitName } from "./usage";
 
 /** Tone used for a pace row's percentage. */
 export type PaceTone = "success" | "warning" | "critical";
 
 /** Fixed label column so the three pace bars start at the same offset. */
 export const PACE_LABEL_WIDTH = 13;
+
+/** Width of the right-aligned percentage column, including its separator. */
+export const PACE_PERCENT_WIDTH = 5;
 
 /** Title heading rendered above the three pace rows. */
 export const PACE_TITLE = "OpenCode Go";
@@ -39,7 +36,7 @@ export interface PaceRow {
   readonly limit: LimitName;
   /** Label padded to `PACE_LABEL_WIDTH` for column alignment. */
   readonly label: string;
-  /** Two-digit percentage plus its trailing space, for example ` 25% `. */
+  /** Fixed-width, right-aligned percentage plus its separator, e.g. ` 25% `. */
   readonly percentText: string;
   readonly tone: PaceTone;
   readonly critical: boolean;
@@ -63,6 +60,18 @@ const EMPTY = "─";
 function clampPercent(percent: number): number {
   if (!Number.isFinite(percent)) return 0;
   return Math.min(100, Math.max(0, percent));
+}
+
+/**
+ * Format a pace percentage in a fixed-width, right-aligned column.
+ *
+ * The numeric field is wide enough for `100`, so `  5% `, ` 25% `, and `100% `
+ * are all `PACE_PERCENT_WIDTH` characters. The trailing space is the separator
+ * before the composite bar, which keeps every bar starting at the same column.
+ */
+export function formatPacePercent(percent: number): string {
+  const padded = String(Math.round(clampPercent(percent))).padStart(3, " ");
+  return `${padded}% `;
 }
 
 /**
@@ -189,7 +198,7 @@ export function buildPaceRows(
         : ahead
           ? "warning"
           : "success";
-    const percentText = formatPercentPrefix(percent);
+    const percentText = formatPacePercent(percent);
     const labelText = `${label.padEnd(PACE_LABEL_WIDTH)} `;
     const prefixLength = labelText.length + percentText.length;
     const segments = computePaceBar({

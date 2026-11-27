@@ -1,10 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import {
   PACE_LABEL_WIDTH,
+  PACE_PERCENT_WIDTH,
   PACE_TITLE,
   buildPaceRows,
   computePaceBar,
   formatPaceBar,
+  formatPacePercent,
   getPaceBarWidth,
   paceElapsedPercent,
 } from "../../src/pace";
@@ -278,11 +280,40 @@ describe("pace rows", () => {
       "Weekly",
       "Monthly",
     ]);
+    expect(rows.map((row) => row.percentText)).toEqual([
+      " 25% ",
+      " 50% ",
+      " 66% ",
+    ]);
     for (const row of rows) {
       expect(row.label).toHaveLength(PACE_LABEL_WIDTH + 1);
       expect(row.label.endsWith(" ")).toBe(true);
+      expect(row.percentText).toHaveLength(PACE_PERCENT_WIDTH);
       expect(row.critical).toBe(false);
     }
+  });
+
+  test("right-aligns percentages so every bar starts at the same column", () => {
+    expect(formatPacePercent(5)).toBe("  5% ");
+    expect(formatPacePercent(25)).toBe(" 25% ");
+    expect(formatPacePercent(100)).toBe("100% ");
+    expect(formatPacePercent(150)).toBe("100% ");
+    expect(formatPacePercent(Number.NaN)).toBe("  0% ");
+    for (const percent of [0, 5, 25, 95, 100]) {
+      expect(formatPacePercent(percent)).toHaveLength(PACE_PERCENT_WIDTH);
+    }
+
+    const rows = buildPaceRows(usage([5, 25, 100]), NOW, 64);
+    const barStarts = rows.map(
+      (row) => row.label.length + row.percentText.length,
+    );
+    expect(rows.map((row) => row.percentText)).toEqual([
+      "  5% ",
+      " 25% ",
+      "100% ",
+    ]);
+    expect(new Set(barStarts).size).toBe(1);
+    expect(barStarts[0]).toBe(PACE_LABEL_WIDTH + 1 + PACE_PERCENT_WIDTH);
   });
 
   test("marks behind-pace rows green and ahead-of-pace rows yellow", () => {
