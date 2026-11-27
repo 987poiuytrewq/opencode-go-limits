@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/987poiuytrewq/opencode-go-usage-limits/actions/workflows/ci.yml/badge.svg)](https://github.com/987poiuytrewq/opencode-go-usage-limits/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/opencode-go-usage-limits.svg)](https://www.npmjs.com/package/opencode-go-usage-limits)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 A TUI-only [OpenCode](https://opencode.ai) plugin that shows your OpenCode Go
 usage in the session sidebar. It renders the rolling 5-hour, weekly, and
@@ -16,10 +17,17 @@ The plugin is deliberately small: it reads the usage meters that OpenCode
 already has access to, follows your active OpenCode theme, and does not store or
 display API keys, token spend, or billing details.
 
-![OpenCode Go compact sidebar showing 66% for the monthly meter and a 5-hour window projected runout at 14:15](demo/demo.svg)
+Expanded mode (the default) shows all three Go meters:
 
-*Compact mode, captured from the real OpenTUI renderer with deterministic fake
-usage data.*
+![OpenCode Go expanded sidebar showing the 5-hour window at 25%, Weekly at 50%, and Monthly at 66%](demo/expanded.svg)
+
+*Expanded mode, captured from the real OpenTUI renderer with deterministic fake usage data.*
+
+Compact mode reduces the panel to two rows:
+
+![OpenCode Go compact sidebar showing 66% for the monthly meter and a 5-hour window projected runout at 14:15](demo/compact.svg)
+
+*Compact mode, captured from deterministic fake usage data.*
 
 ## Features
 
@@ -317,7 +325,7 @@ OpenCode loads it through the `./tui` export.
 | `make test` | Formatting, typecheck, unit tests, and integration tests. No host tools required. |
 | `make format-check` | Formatting for the checked source, demo, and config files, and a strict-JSON check of the first JSON example in this README. |
 | `make typecheck` | `tsc --noEmit` over `src`, `test`, and `demo`. |
-| `make demo` | Renders the compact sidebar through the real OpenTUI test renderer with fake usage data and rewrites `demo/demo.svg`. |
+| `make demo` | Renders the expanded and compact sidebars through the real OpenTUI test renderer with fake usage data and rewrites `demo/expanded.svg` and `demo/compact.svg`. |
 | `make test-unit` | Unit tests for settings, compact status selection/formatting, and usage formatting/estimation. |
 | `make test-integration` | Renders the plugin in a test OpenTUI renderer and covers slot registration, expanded and compact layouts, data loading, error states, refresh, and cleanup. |
 | `make test-e2e` | Opt-in real-host smoke test: launches OpenCode in tmux with an isolated HOME/XDG tree and checks that the session sidebar renders the **OpenCode Go** heading. |
@@ -381,7 +389,7 @@ The integration tests use a path-safe Solid transform preload in
 | `test/integration/` | Mock OpenCode host and TUI rendering tests. |
 | `test/e2e/` | Opt-in real-host tmux smoke test and its isolated fixtures. |
 | `test/preload.ts` | Bun preload that applies the OpenTUI Solid transform. |
-| `demo/capture.ts` | Deterministic compact-mode capture script for `demo/demo.svg`. |
+| `demo/capture.ts` | Deterministic expanded- and compact-mode capture script for `demo/expanded.svg` and `demo/compact.svg`. |
 | `Makefile` | Canonical install, format, typecheck, test, demo, CI, and E2E gates. |
 | `.github/workflows/ci.yml` | Host-free checks plus the OpenCode 2.2.7/2.3.2/2.4.2 E2E matrix on Bun 1.4.4. |
 | `.github/workflows/release.yml` | Guarded, provenance-signed npm publish for non-prerelease GitHub releases. |
@@ -439,3 +447,7 @@ To inspect the exact tarball locally before releasing:
 ```sh
 npm pack --dry-run
 ```
+
+## License
+
+Released under the [MIT License](LICENSE).
