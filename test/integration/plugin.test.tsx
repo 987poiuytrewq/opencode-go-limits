@@ -618,7 +618,7 @@ describe("pace mode", () => {
       const barColumns = ["5-hour", "Weekly", "Monthly"].map((label) =>
         barStartColumn(spans, label),
       );
-      expect(barColumns).toEqual([14, 14, 14]);
+      expect(barColumns).toEqual([8, 8, 8]);
 
       cleanup();
     } finally {
@@ -661,7 +661,7 @@ describe("pace mode", () => {
         barStartColumn(spans, label),
       );
       expect(new Set(barColumns).size).toBe(1);
-      expect(barColumns[0]).toBe(14);
+      expect(barColumns[0]).toBe(8);
 
       const rollingColors = thickColors(lineSpans(spans, "5-hour"));
       expect(rollingColors).toContain("#3fb950");
@@ -706,14 +706,14 @@ describe("pace mode", () => {
         percentStartColumn(spans, label),
       );
       const rowWidths = labels.map((label) => lineWidth(spans, label));
-      expect(barColumns).toEqual([14, 14, 14]);
+      expect(barColumns).toEqual([8, 8, 8]);
       expect(percentColumns).toEqual([60, 60, 60]);
       expect(rowWidths).toEqual([64, 64, 64]);
       const barWidths = labels.map(
         (_label, index) =>
           (percentColumns[index] ?? 0) - (barColumns[index] ?? 0),
       );
-      expect(new Set(barWidths)).toEqual(new Set([46]));
+      expect(new Set(barWidths)).toEqual(new Set([52]));
 
       cleanup();
     } finally {

@@ -177,16 +177,15 @@ const SCENARIOS: readonly DemoScenario[] = [
         );
       }
 
-      // Label → bar → right-aligned percentage: all three bars start after the
-      // fixed label column and end before the fixed percentage column, and all
-      // three percentage fields finish at the sidebar's right edge.
+      // Label → bar → right-aligned percentage: reserve only the longest label
+      // plus one separator, then use the remaining width for equal bars.
       const rows = [rolling, weekly, monthly];
       const barColumns = rows.map((line) => line.indexOf("━"));
       const percentColumns = rows.map((line) => line.indexOf("%") - 3);
       const rowWidths = rows.map((line) => line.length);
       if (
         barColumns.some((column) => column < 0 || column !== barColumns[0]) ||
-        barColumns[0] !== 14 ||
+        barColumns[0] !== 8 ||
         percentColumns.some(
           (column) => column < 0 || column !== percentColumns[0],
         ) ||

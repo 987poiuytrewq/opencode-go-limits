@@ -253,7 +253,7 @@ describe("pace bar glyphs and widths", () => {
   test("sizes the bar after reserving the label and percentage columns", () => {
     expect(getPaceBarWidth(40, 18)).toBe(22);
     expect(getPaceBarWidth(64, PACE_LABEL_WIDTH + 1 + PACE_PERCENT_WIDTH)).toBe(
-      46,
+      52,
     );
     expect(getPaceBarWidth(64, 34)).toBe(30);
     expect(getPaceBarWidth(12.9, 5)).toBe(7);
@@ -330,7 +330,7 @@ describe("pace rows", () => {
     expect(new Set(labelColumns).size).toBe(1);
     expect(labelColumns[0]).toBe(PACE_LABEL_WIDTH + 1);
     expect(new Set(barWidths).size).toBe(1);
-    expect(barWidths[0]).toBe(64 - (labelColumns[0] ?? 0) - PACE_PERCENT_WIDTH);
+    expect(barWidths[0]).toBe(52);
     expect(new Set(percentColumns).size).toBe(1);
     expect(new Set(rowWidths)).toEqual(new Set([64]));
   });
