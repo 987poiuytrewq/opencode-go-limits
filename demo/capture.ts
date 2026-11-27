@@ -154,15 +154,16 @@ const SCENARIOS: readonly DemoScenario[] = [
       "OpenCode Go pace sidebar with a bold title and behind-pace, ahead-of-pace, and critical monthly bars",
     validate(lines, charFrame, captured) {
       const visible = lines.join("\n");
+      const [rolling = "", weekly = "", monthly = ""] = lines.slice(1);
       if (
         lines.length !== 4 ||
         lines[0] !== "OpenCode Go" ||
-        !lines[1]?.startsWith("5-hour") ||
-        !lines[2]?.startsWith("Weekly") ||
-        !lines[3]?.startsWith("Monthly") ||
-        !visible.includes("25% ") ||
-        !visible.includes("95% ") ||
-        !visible.includes("100% ") ||
+        !rolling?.startsWith("5-hour") ||
+        !rolling.endsWith(" 25%") ||
+        !weekly?.startsWith("Weekly") ||
+        !weekly.endsWith(" 95%") ||
+        !monthly?.startsWith("Monthly") ||
+        !monthly.endsWith("100%") ||
         visible.includes("limit reached") ||
         visible.includes("✖") ||
         !visible.includes("━") ||
@@ -174,13 +175,24 @@ const SCENARIOS: readonly DemoScenario[] = [
         );
       }
 
-      // All three composite bars must start at the same column. The percentage
-      // column is right-aligned wide enough for 100%, so `25%` gains a leading
-      // space rather than shifting its bar left.
-      const barColumns = lines.slice(1).map((line) => line.indexOf("━"));
-      if (barColumns.some((column) => column < 0 || column !== barColumns[0])) {
+      // Label → bar → right-aligned percentage: all three bars start after the
+      // fixed label column and end before the fixed percentage column, and all
+      // three percentage fields finish at the sidebar's right edge.
+      const rows = [rolling, weekly, monthly];
+      const barColumns = rows.map((line) => line.indexOf("━"));
+      const percentColumns = rows.map((line) => line.indexOf("%") - 3);
+      const rowWidths = rows.map((line) => line.length);
+      if (
+        barColumns.some((column) => column < 0 || column !== barColumns[0]) ||
+        barColumns[0] !== 14 ||
+        percentColumns.some(
+          (column) => column < 0 || column !== percentColumns[0],
+        ) ||
+        percentColumns[0] !== 60 ||
+        rowWidths.some((width) => width !== 64)
+      ) {
         throw new Error(
-          `[pace] Expected aligned bar starts, got ${JSON.stringify(barColumns)} in ${JSON.stringify(lines)}`,
+          `[pace] Expected aligned labels/bars/percentages at width 64, got bars ${JSON.stringify(barColumns)}, percents ${JSON.stringify(percentColumns)}, widths ${JSON.stringify(rowWidths)} in ${JSON.stringify(lines)}`,
         );
       }
 

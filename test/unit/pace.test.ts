@@ -250,8 +250,11 @@ describe("pace bar glyphs and widths", () => {
     });
   });
 
-  test("sizes the bar after the row prefix and never below one column", () => {
+  test("sizes the bar after reserving the label and percentage columns", () => {
     expect(getPaceBarWidth(40, 18)).toBe(22);
+    expect(getPaceBarWidth(64, PACE_LABEL_WIDTH + 1 + PACE_PERCENT_WIDTH)).toBe(
+      46,
+    );
     expect(getPaceBarWidth(64, 34)).toBe(30);
     expect(getPaceBarWidth(12.9, 5)).toBe(7);
     expect(getPaceBarWidth(40, 60)).toBe(1);
@@ -281,9 +284,9 @@ describe("pace rows", () => {
       "Monthly",
     ]);
     expect(rows.map((row) => row.percentText)).toEqual([
-      " 25% ",
-      " 50% ",
-      " 66% ",
+      " 25%",
+      " 50%",
+      " 66%",
     ]);
     for (const row of rows) {
       expect(row.label).toHaveLength(PACE_LABEL_WIDTH + 1);
@@ -293,27 +296,43 @@ describe("pace rows", () => {
     }
   });
 
-  test("right-aligns percentages so every bar starts at the same column", () => {
-    expect(formatPacePercent(5)).toBe("  5% ");
-    expect(formatPacePercent(25)).toBe(" 25% ");
-    expect(formatPacePercent(100)).toBe("100% ");
-    expect(formatPacePercent(150)).toBe("100% ");
-    expect(formatPacePercent(Number.NaN)).toBe("  0% ");
+  test("right-aligns percentages at the sidebar edge after equal-width bars", () => {
+    expect(formatPacePercent(5)).toBe("  5%");
+    expect(formatPacePercent(25)).toBe(" 25%");
+    expect(formatPacePercent(100)).toBe("100%");
+    expect(formatPacePercent(150)).toBe("100%");
+    expect(formatPacePercent(Number.NaN)).toBe("  0%");
     for (const percent of [0, 5, 25, 95, 100]) {
       expect(formatPacePercent(percent)).toHaveLength(PACE_PERCENT_WIDTH);
     }
 
     const rows = buildPaceRows(usage([5, 25, 100]), NOW, 64);
-    const barStarts = rows.map(
-      (row) => row.label.length + row.percentText.length,
+    const labelColumns = rows.map((row) => row.label.length);
+    const barWidths = rows.map(
+      (row) =>
+        row.segments.used +
+        row.segments.elapsed +
+        row.segments.over +
+        row.segments.empty,
+    );
+    const percentColumns = rows.map(
+      (row, index) => row.label.length + (barWidths[index] ?? 0),
+    );
+    const rowWidths = rows.map(
+      (row, index) =>
+        row.label.length + (barWidths[index] ?? 0) + row.percentText.length,
     );
     expect(rows.map((row) => row.percentText)).toEqual([
-      "  5% ",
-      " 25% ",
-      "100% ",
+      "  5%",
+      " 25%",
+      "100%",
     ]);
-    expect(new Set(barStarts).size).toBe(1);
-    expect(barStarts[0]).toBe(PACE_LABEL_WIDTH + 1 + PACE_PERCENT_WIDTH);
+    expect(new Set(labelColumns).size).toBe(1);
+    expect(labelColumns[0]).toBe(PACE_LABEL_WIDTH + 1);
+    expect(new Set(barWidths).size).toBe(1);
+    expect(barWidths[0]).toBe(64 - (labelColumns[0] ?? 0) - PACE_PERCENT_WIDTH);
+    expect(new Set(percentColumns).size).toBe(1);
+    expect(new Set(rowWidths)).toEqual(new Set([64]));
   });
 
   test("marks behind-pace rows green and ahead-of-pace rows yellow", () => {
@@ -349,7 +368,7 @@ describe("pace rows", () => {
 
     expect(monthly?.critical).toBe(true);
     expect(monthly?.tone).toBe("critical");
-    expect(monthly?.percentText).toBe("100% ");
+    expect(monthly?.percentText).toBe("100%");
     expect(monthly?.segments.used).toBeGreaterThan(0);
     expect(monthly?.segments.elapsed).toBe(0);
     expect(monthly?.segments.over).toBe(0);

@@ -8,6 +8,7 @@ import {
 import { createTestRenderer } from "@opentui/core/testing";
 import { render } from "@opentui/solid";
 import { PluginContextProvider } from "@opencode/plugin/tui";
+import { PACE_PERCENT_WIDTH } from "../../src/pace";
 import plugin from "../../src/tui";
 import { createMockHost, usageAt, type MockHost } from "./host";
 
@@ -272,6 +273,27 @@ function barStartColumn(spans: CapturedFrame, needle: string): number {
   throw new Error(`No composite bar on the line containing ${needle}`);
 }
 
+/** Zero-based column where the percentage field starts on a line. */
+function percentStartColumn(spans: CapturedFrame, needle: string): number {
+  let column = 0;
+  for (const span of lineSpans(spans, needle)) {
+    const offset = span.text.indexOf("%");
+    if (offset >= 0) {
+      return column + offset - (PACE_PERCENT_WIDTH - 1);
+    }
+    column += span.width;
+  }
+  throw new Error(`No percentage on the line containing ${needle}`);
+}
+
+/** Rendered width of the line containing `needle`, including its sibling spans. */
+function lineWidth(spans: CapturedFrame, needle: string): number {
+  return lineSpans(spans, needle).reduce(
+    (width, span) => width + span.width,
+    0,
+  );
+}
+
 function thickColors(spans: CapturedSpan[]): Set<string> {
   return new Set(
     spans
@@ -511,18 +533,18 @@ describe("pace mode", () => {
       expect(lines).toHaveLength(4);
       expect(lines[0]).toBe("OpenCode Go");
       expect(lines[1]).toContain("5-hour");
-      expect(lines[1]).toContain(" 25% ");
+      expect(lines[1]).toMatch(/ 25%$/);
       expect(lines[2]).toContain("Weekly");
-      expect(lines[2]).toContain(" 50% ");
+      expect(lines[2]).toMatch(/ 50%$/);
       expect(lines[3]).toContain("Monthly");
-      expect(lines[3]).toContain(" 80% ");
+      expect(lines[3]).toMatch(/ 80%$/);
 
       const spans = testRenderer.captureSpans();
       expect(spanBold(spans, "OpenCode Go")).toBe(true);
       const barColumns = ["5-hour", "Weekly", "Monthly"].map((label) =>
         barStartColumn(spans, label),
       );
-      expect(barColumns).toEqual([19, 19, 19]);
+      expect(barColumns).toEqual([14, 14, 14]);
 
       cleanup();
     } finally {
@@ -548,24 +570,24 @@ describe("pace mode", () => {
       expect(lines).toHaveLength(4);
       expect(lines[0]).toBe("OpenCode Go");
       expect(lines[1]).toContain("5-hour");
-      expect(lines[1]).toContain(" 25% ");
+      expect(lines[1]).toMatch(/ 25%$/);
       expect(lines[2]).toContain("Weekly");
-      expect(lines[2]).toContain(" 95% ");
+      expect(lines[2]).toMatch(/ 95%$/);
       expect(lines[3]).toContain("Monthly");
-      expect(lines[3]).toContain(" 66% ");
+      expect(lines[3]).toMatch(/ 66%$/);
 
       const spans = testRenderer.captureSpans();
       expect(spanBold(spans, "OpenCode Go")).toBe(true);
       expect(spanColor(spans, "OpenCode Go")).toBe("#c9d1d9");
-      expect(spanColor(spans, " 25% ")).toBe("#3fb950");
-      expect(spanColor(spans, " 95% ")).toBe("#d29922");
-      expect(spanColor(spans, " 66% ")).toBe("#3fb950");
+      expect(spanColor(spans, " 25%")).toBe("#3fb950");
+      expect(spanColor(spans, " 95%")).toBe("#d29922");
+      expect(spanColor(spans, " 66%")).toBe("#3fb950");
 
       const barColumns = ["5-hour", "Weekly", "Monthly"].map((label) =>
         barStartColumn(spans, label),
       );
       expect(new Set(barColumns).size).toBe(1);
-      expect(barColumns[0]).toBe(19);
+      expect(barColumns[0]).toBe(14);
 
       const rollingColors = thickColors(lineSpans(spans, "5-hour"));
       expect(rollingColors).toContain("#3fb950");
@@ -599,16 +621,25 @@ describe("pace mode", () => {
 
       const lines = nonEmptyLines(testRenderer.captureCharFrame());
       expect(lines).toHaveLength(4);
-      expect(lines[1]).toContain("  5% ");
-      expect(lines[2]).toContain(" 25% ");
-      expect(lines[3]).toContain("100% ");
+      expect(lines[1]).toMatch(/  5%$/);
+      expect(lines[2]).toMatch(/ 25%$/);
+      expect(lines[3]).toMatch(/100%$/);
 
       const spans = testRenderer.captureSpans();
-      const barColumns = ["5-hour", "Weekly", "Monthly"].map((label) =>
-        barStartColumn(spans, label),
+      const labels = ["5-hour", "Weekly", "Monthly"];
+      const barColumns = labels.map((label) => barStartColumn(spans, label));
+      const percentColumns = labels.map((label) =>
+        percentStartColumn(spans, label),
       );
-      expect(barColumns).toEqual([19, 19, 19]);
-      expect(new Set(barColumns).size).toBe(1);
+      const rowWidths = labels.map((label) => lineWidth(spans, label));
+      expect(barColumns).toEqual([14, 14, 14]);
+      expect(percentColumns).toEqual([60, 60, 60]);
+      expect(rowWidths).toEqual([64, 64, 64]);
+      const barWidths = labels.map(
+        (_label, index) =>
+          (percentColumns[index] ?? 0) - (barColumns[index] ?? 0),
+      );
+      expect(new Set(barWidths)).toEqual(new Set([46]));
 
       cleanup();
     } finally {
@@ -638,12 +669,12 @@ describe("pace mode", () => {
       expect(lines).toHaveLength(4);
       expect(lines[0]).toBe("OpenCode Go");
       expect(lines[3]).toContain("Monthly");
-      expect(lines[3]).toContain("100% ");
+      expect(lines[3]).toMatch(/100%$/);
       expect(lines[3]).not.toContain("✖");
       expect(lines[3]).not.toContain("limit reached");
 
       const spans = testRenderer.captureSpans();
-      expect(spanColor(spans, "100% ")).toBe("#f85149");
+      expect(spanColor(spans, "100%")).toBe("#f85149");
       const monthlySpans = lineSpans(spans, "Monthly");
       const bar = monthlySpans.find((span) => span.text.includes("━"));
       expect(bar).toBeDefined();

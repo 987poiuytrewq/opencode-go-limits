@@ -241,9 +241,6 @@ function QuotaWidget(props: { refreshMs: number; mode: SidebarMode }) {
                   <span style={{ fg: context.theme.text.base }}>
                     {row.label}
                   </span>
-                  <span style={{ fg: toneColor(row.tone) }}>
-                    {row.percentText}
-                  </span>
                   <span
                     style={{
                       fg: row.critical
@@ -263,6 +260,9 @@ function QuotaWidget(props: { refreshMs: number; mode: SidebarMode }) {
                   </span>
                   <span style={{ fg: context.theme.text.muted }}>
                     {row.bar.empty}
+                  </span>
+                  <span style={{ fg: toneColor(row.tone) }}>
+                    {row.percentText}
                   </span>
                 </text>
               )}
