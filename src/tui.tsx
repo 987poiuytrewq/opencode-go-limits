@@ -10,6 +10,7 @@ import {
   type CompactRows,
   type CompactTone,
 } from "./compact";
+import { buildPaceRows, type PaceTone } from "./pace";
 import { pluginSettings, type SidebarMode } from "./settings";
 import {
   LIMITS,
@@ -94,16 +95,25 @@ function QuotaWidget(props: { refreshMs: number; mode: SidebarMode }) {
     context.renderer.off("resize", measureBar);
   });
 
-  const toneColor = (tone: CompactTone) =>
+  const toneColor = (tone: CompactTone | PaceTone) =>
     tone === "critical"
       ? context.theme.text.feedback.error.base
       : tone === "warning"
         ? context.theme.text.feedback.warning.base
-        : tone === "ok"
+        : tone === "ok" || tone === "success"
           ? context.theme.text.feedback.success.base
           : tone === "muted"
             ? context.theme.text.muted
             : context.theme.text.base;
+
+  const paceFallback = (): { text: string; tone: CompactTone } => {
+    const failure = error();
+    if (failure) return { text: `✖ error · ${failure}`, tone: "critical" };
+    if (unavailable()) {
+      return { text: "– Go usage unavailable", tone: "muted" };
+    }
+    return { text: "… loading limits", tone: "muted" };
+  };
 
   const compactRows = (): CompactRows => {
     const failure = error();
@@ -126,7 +136,7 @@ function QuotaWidget(props: { refreshMs: number; mode: SidebarMode }) {
       flexGrow={1}
       minWidth={0}
     >
-      <Show when={props.mode !== "compact"}>
+      <Show when={props.mode === "expanded"}>
         <box
           flexDirection="row"
           justifyContent="space-between"
@@ -209,6 +219,57 @@ function QuotaWidget(props: { refreshMs: number; mode: SidebarMode }) {
                 }}
               </For>
             </>
+          )}
+        </Show>
+      </Show>
+      <Show when={props.mode === "pace"}>
+        <Show
+          when={usage()}
+          fallback={
+            <text fg={toneColor(paceFallback().tone)}>
+              {paceFallback().text}
+            </text>
+          }
+        >
+          {(data) => (
+            <For each={buildPaceRows(data(), Date.now(), barWidth())}>
+              {(row) => (
+                <text width="100%" wrapMode="none">
+                  <span style={{ fg: context.theme.text.base }}>
+                    {row.label}
+                  </span>
+                  <span style={{ fg: toneColor(row.tone) }}>
+                    {row.percentText}
+                  </span>
+                  <Show when={row.status.length > 0}>
+                    <span style={{ fg: toneColor(row.tone) }}>
+                      {" "}
+                      {row.status}{" "}
+                    </span>
+                  </Show>
+                  <span
+                    style={{
+                      fg: row.critical
+                        ? context.theme.text.feedback.error.base
+                        : context.theme.text.feedback.success.base,
+                    }}
+                  >
+                    {row.bar.used}
+                  </span>
+                  <span style={{ fg: context.theme.text.muted }}>
+                    {row.bar.elapsed}
+                  </span>
+                  <span
+                    style={{ fg: context.theme.text.feedback.warning.base }}
+                  >
+                    {row.bar.over}
+                  </span>
+                  <span style={{ fg: context.theme.text.muted }}>
+                    {row.bar.empty}
+                  </span>
+                </text>
+              )}
+            </For>
           )}
         </Show>
       </Show>
