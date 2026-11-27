@@ -3,6 +3,18 @@ import type { UsageLimitsGo } from "@opencode/client";
 export type LimitName = "rolling" | "weekly" | "monthly";
 export type GoUsage = UsageLimitsGo;
 
+export interface LimitDescriptor {
+  readonly id: LimitName;
+  readonly label: string;
+}
+
+/** Display order for the three Go meters, most urgent window first. */
+export const LIMITS: readonly LimitDescriptor[] = [
+  { id: "rolling", label: "5-hour window" },
+  { id: "weekly", label: "Weekly" },
+  { id: "monthly", label: "Monthly" },
+];
+
 export type RunoutEstimate =
   | { kind: "idle" }
   | { kind: "after-reset" }

@@ -22,6 +22,8 @@ export interface MockHostOptions {
   readonly usage?: UsageLimitsGo;
   readonly unavailable?: boolean;
   readonly failure?: Error;
+  /** Leave the usage request pending so loading states can be observed. */
+  readonly hang?: boolean;
   readonly options?: Record<string, unknown>;
   readonly directory?: string;
 }
@@ -49,6 +51,9 @@ export function createMockHost(input: MockHostOptions): MockHost {
     request?: ExperimentalUsageLimitsInput,
   ): Promise<ExperimentalUsageLimitsOutput> => {
     requests.push(request);
+    if (input.hang) {
+      return new Promise<ExperimentalUsageLimitsOutput>(() => {});
+    }
     if (input.failure) throw input.failure;
     return {
       location: { directory },

@@ -1,8 +1,17 @@
 import { For, Show, createSignal, onCleanup, onMount } from "solid-js";
 import { TextAttributes } from "@opentui/core";
 import { Plugin, usePlugin } from "@opencode/plugin/tui";
-import { pluginSettings } from "./settings";
 import {
+  formatCompactError,
+  formatCompactLoading,
+  formatCompactStatus,
+  formatCompactUnavailable,
+  selectCompactStatus,
+  type CompactSeverity,
+} from "./compact";
+import { pluginSettings, type SidebarMode } from "./settings";
+import {
+  LIMITS,
   estimateRunout,
   formatRunoutDate,
   formatPercentPrefix,
@@ -10,7 +19,6 @@ import {
   formatResetCountdown,
   getProgressBarWidth,
   type GoUsage,
-  type LimitName,
 } from "./usage";
 
 interface LayoutMeasureNode {
@@ -26,15 +34,11 @@ function getLayoutWidth(
   return node?.getLayoutNode?.().getComputedWidth();
 }
 
-const LIMITS: { id: LimitName; label: string }[] = [
-  { id: "rolling", label: "5-hour window" },
-  { id: "weekly", label: "Weekly" },
-  { id: "monthly", label: "Monthly" },
-];
-function QuotaWidget(props: { refreshMs: number }) {
+function QuotaWidget(props: { refreshMs: number; mode: SidebarMode }) {
   const context = usePlugin();
   const [usage, setUsage] = createSignal<GoUsage>();
   const [error, setError] = createSignal<string>();
+  const [unavailable, setUnavailable] = createSignal(false);
   const [loading, setLoading] = createSignal(true);
   const [barWidth, setBarWidth] = createSignal(1);
   let sidebarBox: LayoutMeasureNode | undefined;
@@ -59,14 +63,17 @@ function QuotaWidget(props: { refreshMs: number }) {
       if (response.data?.go) {
         setUsage(response.data.go);
         setError(undefined);
+        setUnavailable(false);
       } else {
         setUsage(undefined);
-        setError("OpenCode Go usage is unavailable for this workspace");
+        setError(undefined);
+        setUnavailable(true);
       }
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : "Could not load Go limits",
       );
+      setUnavailable(false);
     } finally {
       requestPending = false;
       setLoading(false);
@@ -86,6 +93,47 @@ function QuotaWidget(props: { refreshMs: number }) {
     context.renderer.off("resize", measureBar);
   });
 
+  const severityColor = (severity: CompactSeverity) =>
+    severity === "critical"
+      ? context.theme.text.feedback.error.base
+      : severity === "warning"
+        ? context.theme.text.feedback.warning.base
+        : context.theme.text.feedback.success.base;
+
+  const compactLine = (): { text: string; color: string } => {
+    const failure = error();
+    if (failure) {
+      return {
+        text: formatCompactError(failure),
+        color: context.theme.text.feedback.error.base,
+      };
+    }
+    if (unavailable()) {
+      return {
+        text: formatCompactUnavailable(),
+        color: context.theme.text.muted,
+      };
+    }
+    if (loading()) {
+      return { text: formatCompactLoading(), color: context.theme.text.muted };
+    }
+
+    const data = usage();
+    if (!data) {
+      return {
+        text: formatCompactUnavailable(),
+        color: context.theme.text.muted,
+      };
+    }
+
+    const now = Date.now();
+    const status = selectCompactStatus(data, now);
+    return {
+      text: formatCompactStatus(status, now),
+      color: severityColor(status.severity),
+    };
+  };
+
   return (
     <box
       ref={(node) => (sidebarBox = node)}
@@ -95,80 +143,96 @@ function QuotaWidget(props: { refreshMs: number }) {
       flexGrow={1}
       minWidth={0}
     >
-      <box
-        flexDirection="row"
-        justifyContent="space-between"
-        alignItems="center"
-        width="100%"
-      >
-        <text fg={context.theme.text.base} attributes={TextAttributes.BOLD}>
-          OpenCode Go
-        </text>
-      </box>
-      <Show
-        when={usage()}
-        fallback={<text>{loading() ? "Loading limits…" : error()}</text>}
-      >
-        {(data) => (
-          <>
-            <For each={LIMITS}>
-              {(limit) => {
-                const meter = () => data()[limit.id];
-                const bar = () =>
-                  formatProgressBar(
-                    meter().percent,
-                    getProgressBarWidth(barWidth(), meter().percent),
-                  );
-                const projection = () =>
-                  estimateRunout(limit.id, meter(), Date.now());
-                const color = () =>
-                  meter().limited || meter().percent >= 100
-                    ? context.theme.text.feedback.error.base
-                    : meter().percent >= 80
-                      ? context.theme.text.feedback.warning.base
-                      : context.theme.text.feedback.success.base;
+      <Show when={props.mode !== "compact"}>
+        <box
+          flexDirection="row"
+          justifyContent="space-between"
+          alignItems="center"
+          width="100%"
+        >
+          <text fg={context.theme.text.base} attributes={TextAttributes.BOLD}>
+            OpenCode Go
+          </text>
+        </box>
+        <Show
+          when={usage()}
+          fallback={
+            <text>
+              {loading()
+                ? "Loading limits…"
+                : (error() ??
+                  "OpenCode Go usage is unavailable for this workspace")}
+            </text>
+          }
+        >
+          {(data) => (
+            <>
+              <For each={LIMITS}>
+                {(limit) => {
+                  const meter = () => data()[limit.id];
+                  const bar = () =>
+                    formatProgressBar(
+                      meter().percent,
+                      getProgressBarWidth(barWidth(), meter().percent),
+                    );
+                  const projection = () =>
+                    estimateRunout(limit.id, meter(), Date.now());
+                  const color = () =>
+                    meter().limited || meter().percent >= 100
+                      ? context.theme.text.feedback.error.base
+                      : meter().percent >= 80
+                        ? context.theme.text.feedback.warning.base
+                        : context.theme.text.feedback.success.base;
 
-                return (
-                  <box flexDirection="column" width="100%">
-                    <box
-                      flexDirection="row"
-                      justifyContent="space-between"
-                      alignItems="center"
-                      width="100%"
-                    >
-                      <box flexDirection="row" alignItems="center">
-                        <text fg={context.theme.text.base}>{limit.label}</text>
-                        <Show when={projection().kind === "estimate"}>
-                          <text fg={context.theme.text.feedback.warning.base}>
-                            {" "}
-                            ⚠{" "}
-                            {formatRunoutDate(
-                              limit.id,
-                              projection(),
-                              Date.now(),
-                            )}
+                  return (
+                    <box flexDirection="column" width="100%">
+                      <box
+                        flexDirection="row"
+                        justifyContent="space-between"
+                        alignItems="center"
+                        width="100%"
+                      >
+                        <box flexDirection="row" alignItems="center">
+                          <text fg={context.theme.text.base}>
+                            {limit.label}
                           </text>
-                        </Show>
+                          <Show when={projection().kind === "estimate"}>
+                            <text fg={context.theme.text.feedback.warning.base}>
+                              {" "}
+                              ⚠{" "}
+                              {formatRunoutDate(
+                                limit.id,
+                                projection(),
+                                Date.now(),
+                              )}
+                            </text>
+                          </Show>
+                        </box>
+                        <text fg={context.theme.text.muted}>
+                          {formatResetCountdown(meter().resetsAt)}
+                        </text>
                       </box>
-                      <text fg={context.theme.text.muted}>
-                        {formatResetCountdown(meter().resetsAt)}
+                      <text width="100%" wrapMode="none">
+                        <span style={{ fg: color() }}>
+                          {formatPercentPrefix(meter().percent)}
+                        </span>
+                        <span style={{ fg: color() }}>{bar().filled}</span>
+                        <span style={{ fg: context.theme.text.muted }}>
+                          {bar().empty}
+                        </span>
                       </text>
                     </box>
-                    <text width="100%" wrapMode="none">
-                      <span style={{ fg: color() }}>
-                        {formatPercentPrefix(meter().percent)}
-                      </span>
-                      <span style={{ fg: color() }}>{bar().filled}</span>
-                      <span style={{ fg: context.theme.text.muted }}>
-                        {bar().empty}
-                      </span>
-                    </text>
-                  </box>
-                );
-              }}
-            </For>
-          </>
-        )}
+                  );
+                }}
+              </For>
+            </>
+          )}
+        </Show>
+      </Show>
+      <Show when={props.mode === "compact"}>
+        <text fg={compactLine().color} width="100%" wrapMode="none">
+          {compactLine().text}
+        </text>
       </Show>
     </box>
   );
