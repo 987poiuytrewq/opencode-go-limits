@@ -45,17 +45,17 @@ describe("monthly compact summary", () => {
     );
 
     expect(status.severity).toBe("ok");
-    expect(formatCompactMonthly(status)).toBe("Monthly 66%");
-    expect(rows.summary).toEqual({ text: "Monthly 66%", tone: "neutral" });
+    expect(formatCompactMonthly(status)).toBe("66%");
+    expect(rows.summary).toEqual({ text: "66%", tone: "neutral" });
   });
 
   test("marks an approaching monthly value with two spaces and a warning", () => {
     const status = selectMonthlyStatus(usage([10, 20, 85]), NOW);
 
     expect(status.severity).toBe("warning");
-    expect(formatCompactMonthly(status)).toBe("Monthly 85%  ⚠");
+    expect(formatCompactMonthly(status)).toBe("85%  ⚠");
     expect(formatCompactStatus(usage([10, 20, 85]), NOW).summary).toEqual({
-      text: "Monthly 85%  ⚠",
+      text: "85%  ⚠",
       tone: "warning",
     });
   });
@@ -68,13 +68,13 @@ describe("monthly compact summary", () => {
 
     expect(status.projection.kind).toBe("estimate");
     expect(status.severity).toBe("warning");
-    expect(formatCompactMonthly(status)).toBe("Monthly 66%  ⚠");
+    expect(formatCompactMonthly(status)).toBe("66%  ⚠");
   });
 
   test("marks an exhausted or API-limited monthly value as critical", () => {
     expect(
       formatCompactMonthly(selectMonthlyStatus(usage([10, 20, 150]), NOW)),
-    ).toBe("Monthly 100% ✖");
+    ).toBe("100% ✖");
 
     expect(
       formatCompactMonthly(
@@ -83,7 +83,7 @@ describe("monthly compact summary", () => {
           NOW,
         ),
       ),
-    ).toBe("Monthly 20% ✖");
+    ).toBe("20% ✖");
   });
 });
 
@@ -188,15 +188,15 @@ describe("compact state formatting", () => {
     const error = formatCompactError("limits endpoint offline");
 
     expect(loading).toEqual({
-      summary: { text: "Monthly …", tone: "muted" },
+      summary: { text: "…", tone: "muted" },
       detail: { text: "… loading limits", tone: "muted" },
     });
     expect(unavailable).toEqual({
-      summary: { text: "Monthly –", tone: "muted" },
+      summary: { text: "–", tone: "muted" },
       detail: { text: "– Go usage unavailable", tone: "muted" },
     });
     expect(error).toEqual({
-      summary: { text: "Monthly ✖", tone: "critical" },
+      summary: { text: "✖", tone: "critical" },
       detail: { text: "✖ error · limits endpoint offline", tone: "critical" },
     });
     expect(

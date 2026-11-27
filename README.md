@@ -16,7 +16,7 @@ The plugin is deliberately small: it reads the usage meters that OpenCode
 already has access to, follows your active OpenCode theme, and does not store or
 display API keys, token spend, or billing details.
 
-![OpenCode Go compact sidebar showing Monthly at 66% and a 5-hour window projected runout at 14:15](demo/demo.svg)
+![OpenCode Go compact sidebar showing 66% for the monthly meter and a 5-hour window projected runout at 14:15](demo/demo.svg)
 
 *Compact mode, captured from the real OpenTUI renderer with deterministic fake
 usage data.*
@@ -145,11 +145,12 @@ up a queue of requests. The plugin has no manual refresh command; if you change
 
 Set `"mode": "compact"` to reduce the panel to two rows. The first row keeps the
 `OpenCode Go` title on the left and always summarizes the monthly meter on the
-right. The second row shows the most urgent short-window meter (5-hour window or
-weekly), with its status symbol and either a projected runout or reset detail:
+right as a bare percentage; the title supplies the monthly context. The second
+row shows the most urgent short-window meter (5-hour window or weekly), with its
+status symbol and either a projected runout or reset detail:
 
 ```text
-OpenCode Go                              Monthly 66%
+OpenCode Go                              66%
 5-hour window  ⚠ 14:15
 ```
 
@@ -160,8 +161,8 @@ exhausted or marked limited by the API, it carries `✖` and the theme's error
 color:
 
 ```text
-OpenCode Go                              Monthly 85%  ⚠
-OpenCode Go                              Monthly 100% ✖
+OpenCode Go                              85%  ⚠
+OpenCode Go                              100% ✖
 ```
 
 The second row selects only the 5-hour and weekly meters, using the same urgency
@@ -184,13 +185,13 @@ theme color always agree, so the mode is readable without color.
 Compact mode keeps its other states in two distinct rows as well:
 
 ```text
-OpenCode Go                              Monthly …
+OpenCode Go                              …
 … loading limits
 
-OpenCode Go                              Monthly –
+OpenCode Go                              –
 – Go usage unavailable
 
-OpenCode Go                              Monthly ✖
+OpenCode Go                              ✖
 ✖ error · limits endpoint offline
 ```
 

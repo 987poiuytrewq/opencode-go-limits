@@ -174,12 +174,12 @@ export function formatCompactPercent(percent: number): string {
 /**
  * Format the monthly summary for the right side of the first compact row.
  *
- * Healthy months stay plain (`Monthly 66%`). Approaching or exhausted months
- * carry the same explicit symbol as the second row so the state is readable
- * without relying on theme color.
+ * The title already supplies the context, so the summary is a bare percentage
+ * (`66%`). Approaching or exhausted months carry the same explicit symbol as
+ * the second row so the state is readable without relying on theme color.
  */
 export function formatCompactMonthly(status: CompactStatus): string {
-  const summary = `${status.label} ${formatCompactPercent(status.percent)}`;
+  const summary = formatCompactPercent(status.percent);
   if (status.severity === "critical")
     return `${summary} ${SEVERITY_SYMBOLS.critical}`;
   if (status.severity === "warning") {
@@ -232,7 +232,7 @@ export function formatCompactStatus(usage: GoUsage, now: number): CompactRows {
 /** Two-row compact status shown while the first request is in flight. */
 export function formatCompactLoading(): CompactRows {
   return {
-    summary: { text: "Monthly …", tone: "muted" },
+    summary: { text: "…", tone: "muted" },
     detail: { text: "… loading limits", tone: "muted" },
   };
 }
@@ -240,7 +240,7 @@ export function formatCompactLoading(): CompactRows {
 /** Two-row compact status when the workspace has no Go allowance. */
 export function formatCompactUnavailable(): CompactRows {
   return {
-    summary: { text: "Monthly –", tone: "muted" },
+    summary: { text: "–", tone: "muted" },
     detail: { text: "– Go usage unavailable", tone: "muted" },
   };
 }
@@ -250,7 +250,7 @@ export function formatCompactError(cause: string): CompactRows {
   const message =
     cause.replace(/\s+/g, " ").trim() || "Could not load Go limits";
   return {
-    summary: { text: "Monthly ✖", tone: "critical" },
+    summary: { text: "✖", tone: "critical" },
     detail: { text: `✖ error · ${message}`, tone: "critical" },
   };
 }

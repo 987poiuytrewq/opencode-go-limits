@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="672" height="190" viewBox="0 0 672 190" role="img" aria-labelledby="demo-title demo-desc">
   <title id="demo-title">OpenCode Go compact sidebar with a monthly summary and a projected rolling runout</title>
-  <desc id="demo-desc">Terminal-style screenshot of the OpenCode Go sidebar in compact mode, captured from a 64 by 3 character frame rendered with fake usage data. The two rows read: OpenCode Go                                          Monthly 66%
+  <desc id="demo-desc">Terminal-style screenshot of the OpenCode Go sidebar in compact mode, captured from a 64 by 3 character frame rendered with fake usage data. The two rows read: OpenCode Go                                                  66%
 5-hour window  ⚠ 14:15</desc>
   <rect width="672" height="190" fill="#0b0e14"/>
   <rect x="24" y="20" width="624" height="126" rx="10" fill="#000000" opacity="0.45"/>
@@ -19,7 +19,7 @@
     <circle cx="76" cy="32" r="5" fill="#28c840"/>
     <text x="92" y="36" fill="#c9d1d9" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="11">OpenCode — session sidebar (compact)</text>
     <text x="48" y="86" fill="#ffffff" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">OpenCode Go</text>
-    <text x="147" y="86" fill="#ffffff" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">                                          Monthly 66%</text>
+    <text x="147" y="86" fill="#ffffff" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">                                                  66%</text>
     <text x="48" y="108" fill="#ffff00" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">5-hour window  ⚠ 14:15</text>
   </g>
   <rect x="24" y="16" width="624" height="126" rx="10" fill="none" stroke="#30363d"/>

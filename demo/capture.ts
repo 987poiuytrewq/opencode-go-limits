@@ -327,10 +327,10 @@ async function main(): Promise<void> {
     if (
       visibleLines.length !== 2 ||
       !visibleLines[0]?.startsWith("OpenCode Go") ||
-      !visibleLines[0]?.endsWith("Monthly 66%") ||
+      !visibleLines[0]?.endsWith("66%") ||
       visibleLines[1] !== "5-hour window  ⚠ 14:15" ||
       !charFrame.includes("OpenCode Go") ||
-      !charFrame.includes("Monthly 66%") ||
+      !charFrame.includes("66%") ||
       !charFrame.includes("5-hour window  ⚠ 14:15")
     ) {
       throw new Error(
