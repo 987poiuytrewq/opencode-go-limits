@@ -66,7 +66,15 @@ export function formatRunoutDate(
   return monthDay;
 }
 
-function windowStart(limit: LimitName, resetsAt: number): number {
+/**
+ * Infer when the current window began from its reset timestamp.
+ *
+ * Rolling and weekly windows are fixed lengths. The monthly window is
+ * approximate: it reuses the same UTC day and time in the previous calendar
+ * month, clamped to that month's final day, because Go resets the monthly
+ * allowance with the paid period rather than a guaranteed calendar month.
+ */
+export function windowStart(limit: LimitName, resetsAt: number): number {
   if (limit === "rolling") return resetsAt - 5 * 60 * 60_000;
   if (limit === "weekly") return resetsAt - 7 * 24 * 60 * 60_000;
 

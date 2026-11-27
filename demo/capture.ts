@@ -1,6 +1,6 @@
 /**
- * Render the compact sidebar through the real OpenTUI test renderer and write
- * a deterministic SVG screenshot.
+ * Render the expanded, compact, and pace sidebars through the real OpenTUI test
+ * renderer and write deterministic SVG screenshots.
  *
  * The usage payload is fake, the clock is frozen, and the only client is the
  * mock host from `test/integration/host.ts`, so the capture never reads real Go
@@ -34,7 +34,7 @@ const SESSION_ID = "ses_demo_sidebar";
 const DAY_MS = 24 * 60 * 60_000;
 
 interface DemoScenario {
-  readonly mode: "expanded" | "compact";
+  readonly mode: "expanded" | "compact" | "pace";
   readonly width: number;
   readonly height: number;
   readonly usage: ReturnType<typeof usageAt>;
@@ -52,6 +52,11 @@ const expandedBase = usageAt(FIXED_NOW, {
   rolling: 25,
   weekly: 50,
   monthly: 66,
+});
+const paceBase = usageAt(FIXED_NOW, {
+  rolling: 25,
+  weekly: 95,
+  monthly: 100,
 });
 
 const SCENARIOS: readonly DemoScenario[] = [
@@ -124,6 +129,38 @@ const SCENARIOS: readonly DemoScenario[] = [
       ) {
         throw new Error(
           `[compact] Unexpected compact rows: ${JSON.stringify(lines)} (frame: ${JSON.stringify(charFrame)})`,
+        );
+      }
+    },
+  },
+  {
+    mode: "pace",
+    width: 64,
+    height: 4,
+    usage: {
+      ...paceBase,
+      monthly: { ...paceBase.monthly, limited: true },
+    },
+    output: join(import.meta.dir, "pace.svg"),
+    title:
+      "OpenCode Go pace sidebar showing behind-pace, ahead-of-pace, and critical monthly bars",
+    validate(lines, charFrame) {
+      const visible = lines.join("\n");
+      if (
+        lines.length !== 3 ||
+        !lines[0]?.startsWith("5-hour window") ||
+        !lines[1]?.startsWith("Weekly") ||
+        !lines[2]?.startsWith("Monthly") ||
+        !visible.includes("25% ") ||
+        !visible.includes("95% ") ||
+        !visible.includes("100% ") ||
+        !visible.includes("✖ limit reached") ||
+        !visible.includes("━") ||
+        !visible.includes("─") ||
+        !charFrame.includes("✖ limit reached")
+      ) {
+        throw new Error(
+          `[pace] Unexpected pace rows: ${JSON.stringify(lines)} (frame: ${JSON.stringify(charFrame)})`,
         );
       }
     },

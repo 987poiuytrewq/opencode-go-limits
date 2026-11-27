@@ -1,6 +1,6 @@
 /** @jsxImportSource @opentui/solid */
 import { describe, expect, spyOn, test } from "bun:test";
-import type { CapturedFrame } from "@opentui/core";
+import type { CapturedFrame, CapturedSpan } from "@opentui/core";
 import { createTestRenderer } from "@opentui/core/testing";
 import { render } from "@opentui/solid";
 import { PluginContextProvider } from "@opencode/plugin/tui";
@@ -223,6 +223,31 @@ function spanColor(spans: CapturedFrame, text: string): string | undefined {
   return undefined;
 }
 
+function colorOf(span: CapturedSpan): string {
+  return `#${span.fg
+    .toInts()
+    .slice(0, 3)
+    .map((channel) => channel.toString(16).padStart(2, "0"))
+    .join("")}`;
+}
+
+/** Captured spans for the first rendered line containing `needle`. */
+function lineSpans(spans: CapturedFrame, needle: string): CapturedSpan[] {
+  for (const line of spans.lines) {
+    const text = line.spans.map((span) => span.text).join("");
+    if (text.includes(needle)) return line.spans;
+  }
+  throw new Error(`No rendered line contains ${JSON.stringify(needle)}`);
+}
+
+function thickColors(spans: CapturedSpan[]): Set<string> {
+  return new Set(
+    spans
+      .filter((span) => span.text.includes("━"))
+      .map((span) => colorOf(span)),
+  );
+}
+
 describe("compact mode", () => {
   test("keeps the expanded layout when mode is not configured", async () => {
     const testRenderer = await createTestRenderer({ width: 64, height: 14 });
@@ -422,6 +447,142 @@ describe("compact mode", () => {
       await unavailableRenderer.dispose();
       await errorRenderer.dispose();
       await loadingRenderer.dispose();
+    }
+  });
+});
+
+describe("pace mode", () => {
+  test("renders exactly three composite pace rows with behind and ahead segments", async () => {
+    const testRenderer = await createTestRenderer({ width: 64, height: 6 });
+    const fixedNow = new Date(2026, 10, 27, 12, 45, 0, 0).getTime();
+    const nowSpy = spyOn(Date, "now").mockReturnValue(fixedNow);
+    try {
+      const host = createMockHost({
+        renderer: testRenderer.renderer,
+        usage: usageAt(fixedNow, { rolling: 25, weekly: 95, monthly: 66 }),
+        options: { mode: "pace" },
+      });
+      const cleanup = await mountHost(host);
+      await testRenderer.flush();
+
+      const lines = nonEmptyLines(testRenderer.captureCharFrame());
+      expect(lines).toHaveLength(3);
+      expect(lines[0]).toContain("5-hour window");
+      expect(lines[0]).toContain("25% ");
+      expect(lines[1]).toContain("Weekly");
+      expect(lines[1]).toContain("95% ");
+      expect(lines[2]).toContain("Monthly");
+      expect(lines[2]).toContain("66% ");
+      expect(lines.join("\n")).not.toContain("OpenCode Go");
+
+      const spans = testRenderer.captureSpans();
+      expect(spanColor(spans, "25% ")).toBe("#00ff00");
+      expect(spanColor(spans, "95% ")).toBe("#ffff00");
+      expect(spanColor(spans, "66% ")).toBe("#00ff00");
+
+      const rollingColors = thickColors(lineSpans(spans, "5-hour window"));
+      expect(rollingColors).toContain("#00ff00");
+      expect(rollingColors).toContain("#808080");
+      expect(rollingColors).not.toContain("#ffff00");
+
+      const weeklyColors = thickColors(lineSpans(spans, "Weekly"));
+      expect(weeklyColors).toContain("#00ff00");
+      expect(weeklyColors).toContain("#ffff00");
+      expect(weeklyColors).not.toContain("#808080");
+
+      cleanup();
+    } finally {
+      nowSpy.mockRestore();
+      await testRenderer.dispose();
+    }
+  });
+
+  test("renders a limited pace row as unmistakably critical red with status text", async () => {
+    const testRenderer = await createTestRenderer({ width: 64, height: 6 });
+    const fixedNow = new Date(2026, 10, 27, 12, 45, 0, 0).getTime();
+    const nowSpy = spyOn(Date, "now").mockReturnValue(fixedNow);
+    try {
+      const base = usageAt(fixedNow, { rolling: 25, weekly: 50, monthly: 100 });
+      const host = createMockHost({
+        renderer: testRenderer.renderer,
+        usage: {
+          ...base,
+          monthly: { ...base.monthly, percent: 100, limited: true },
+        },
+        options: { mode: "pace" },
+      });
+      const cleanup = await mountHost(host);
+      await testRenderer.flush();
+
+      const lines = nonEmptyLines(testRenderer.captureCharFrame());
+      expect(lines).toHaveLength(3);
+      expect(lines[2]).toContain("Monthly");
+      expect(lines[2]).toContain("100% ");
+      expect(lines[2]).toContain("✖ limit reached");
+
+      const spans = testRenderer.captureSpans();
+      expect(spanColor(spans, "✖ limit reached")).toBe("#ff0000");
+      const monthlySpans = lineSpans(spans, "Monthly");
+      const bar = monthlySpans.find((span) => span.text.includes("━"));
+      expect(bar).toBeDefined();
+      expect(colorOf(bar as CapturedSpan)).toBe("#ff0000");
+      expect(monthlySpans.map((span) => span.text).join("")).not.toContain("─");
+
+      cleanup();
+    } finally {
+      nowSpy.mockRestore();
+      await testRenderer.dispose();
+    }
+  });
+
+  test("keeps pace loading, unavailable, and error states distinct", async () => {
+    const loadingRenderer = await createTestRenderer({ width: 64, height: 4 });
+    const unavailableRenderer = await createTestRenderer({
+      width: 64,
+      height: 4,
+    });
+    const errorRenderer = await createTestRenderer({ width: 64, height: 4 });
+    try {
+      const loadingHost = createMockHost({
+        renderer: loadingRenderer.renderer,
+        hang: true,
+        options: { mode: "pace" },
+      });
+      const loadingCleanup = await mountHost(loadingHost);
+      await loadingRenderer.flush();
+      expect(nonEmptyLines(loadingRenderer.captureCharFrame())).toEqual([
+        "… loading limits",
+      ]);
+
+      const unavailableHost = createMockHost({
+        renderer: unavailableRenderer.renderer,
+        unavailable: true,
+        options: { mode: "pace" },
+      });
+      const unavailableCleanup = await mountHost(unavailableHost);
+      await unavailableRenderer.flush();
+      expect(nonEmptyLines(unavailableRenderer.captureCharFrame())).toEqual([
+        "– Go usage unavailable",
+      ]);
+
+      const errorHost = createMockHost({
+        renderer: errorRenderer.renderer,
+        failure: new Error("limits endpoint offline"),
+        options: { mode: "pace" },
+      });
+      const errorCleanup = await mountHost(errorHost);
+      await errorRenderer.flush();
+      expect(nonEmptyLines(errorRenderer.captureCharFrame())).toEqual([
+        "✖ error · limits endpoint offline",
+      ]);
+
+      loadingCleanup();
+      unavailableCleanup();
+      errorCleanup();
+    } finally {
+      await loadingRenderer.dispose();
+      await unavailableRenderer.dispose();
+      await errorRenderer.dispose();
     }
   });
 });
