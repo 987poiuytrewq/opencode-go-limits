@@ -119,8 +119,19 @@ describe("plugin settings", () => {
     });
   });
 
+  test("enables pace mode only for the exact pace value", () => {
+    expect(pluginSettings({ mode: "pace" })).toMatchObject({ mode: "pace" });
+    expect(pluginSettings({ refreshMs: 30_000, mode: "pace" })).toEqual({
+      refreshMs: 30_000,
+      mode: "pace",
+    });
+  });
+
   test("falls back to expanded for invalid mode values", () => {
     expect(pluginSettings({ mode: "COMPACT" })).toMatchObject({
+      mode: DEFAULT_MODE,
+    });
+    expect(pluginSettings({ mode: "PACE" })).toMatchObject({
       mode: DEFAULT_MODE,
     });
     expect(pluginSettings({ mode: "collapsed" })).toMatchObject({

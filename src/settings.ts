@@ -8,7 +8,7 @@ export const MAX_REFRESH_MS = 30 * 60_000;
 /** Sidebar layout when `mode` is missing or not a supported value. */
 export const DEFAULT_MODE = "expanded";
 
-export type SidebarMode = "expanded" | "compact";
+export type SidebarMode = "expanded" | "compact" | "pace";
 
 export interface PluginSettings {
   readonly refreshMs: number;
@@ -21,7 +21,7 @@ export interface PluginSettings {
  * `refreshMs` is optional: non-numeric values fall back to the default and
  * finite values are clamped to the supported range so a bad config cannot
  * hammer the server or leave the sidebar stale. `mode` is optional too, and
- * only the exact `compact` value opts out of the expanded layout.
+ * only the exact `compact` or `pace` values opt out of the expanded layout.
  */
 export function pluginSettings(options: unknown): PluginSettings {
   if (typeof options !== "object" || options === null) {
@@ -35,7 +35,11 @@ export function pluginSettings(options: unknown): PluginSettings {
       ? Math.min(MAX_REFRESH_MS, Math.max(MIN_REFRESH_MS, refreshCandidate))
       : DEFAULT_REFRESH_MS;
   const mode: SidebarMode =
-    settings.mode === "compact" ? "compact" : DEFAULT_MODE;
+    settings.mode === "compact"
+      ? "compact"
+      : settings.mode === "pace"
+        ? "pace"
+        : DEFAULT_MODE;
 
   return { refreshMs, mode };
 }

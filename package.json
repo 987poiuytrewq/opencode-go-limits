@@ -28,6 +28,7 @@
     "src/",
     "demo/expanded.svg",
     "demo/compact.svg",
+    "demo/pace.svg",
     "README.md",
     "LICENSE"
   ],
