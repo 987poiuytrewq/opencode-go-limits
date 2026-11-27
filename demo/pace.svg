@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="624" height="106" viewBox="0 0 624 106" role="img" aria-labelledby="demo-title demo-desc">
   <title id="demo-title">OpenCode Go pace sidebar showing behind-pace, ahead-of-pace, and critical monthly bars</title>
-  <desc id="demo-desc">Terminal-style screenshot of the OpenCode Go sidebar in pace mode, captured from a 64 by 4 character frame rendered with fake usage data. The 3 visible rows read: 5-hour window 25% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━─────────
+  <desc id="demo-desc">Terminal-style screenshot of the OpenCode Go sidebar in pace mode, captured from a 64 by 4 character frame rendered with fake usage data. The 3 visible rows read: 5-hour        25% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━─────────
 Weekly        95% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━──
 Monthly       100%  ✖ limit reached ━━━━━━━━━━━━━━━━━━━━━━━━━━━━</desc>
   <rect width="624" height="106" fill="#0d1117"/>
-    <text x="24" y="35" fill="#c9d1d9" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">5-hour window</text>
+    <text x="24" y="35" fill="#c9d1d9" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">5-hour</text>
     <text x="150" y="35" fill="#3fb950" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">25% ━━━━━━━━━━━━</text>
     <text x="294" y="35" fill="#8b949e" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">━━━━━━━━━━━━━━━━━━━━━━━━━─────────</text>
     <text x="24" y="57" fill="#c9d1d9" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">Weekly</text>
