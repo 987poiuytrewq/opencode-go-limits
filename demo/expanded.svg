@@ -1,26 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="624" height="194" viewBox="0 0 624 194" role="img" aria-labelledby="demo-title demo-desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="464" height="224" viewBox="0 0 464 224" role="img" aria-labelledby="demo-title demo-desc">
   <title id="demo-title">OpenCode Go expanded sidebar showing the 5-hour, Weekly, and Monthly meters</title>
-  <desc id="demo-desc">Terminal-style screenshot of the OpenCode Go sidebar in expanded mode, captured from a 64 by 14 character frame rendered with fake usage data. The 7 visible rows read: OpenCode Go                                                 full
-5-hour                                                     1h 0m
-25% ━━━━━━━━━━━━━━━─────────────────────────────────────────────
-Weekly                                                        1d
-50% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━──────────────────────────────
-Monthly                                                       7d
-66% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━────────────────────</desc>
-  <rect width="624" height="194" fill="#0d1117"/>
-    <text x="24" y="35" fill="#c9d1d9" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" font-weight="bold" xml:space="preserve">OpenCode Go</text>
-    <text x="564" y="35" fill="#8b949e" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">full</text>
-    <text x="24" y="57" fill="#c9d1d9" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">5-hour</text>
-    <text x="555" y="57" fill="#8b949e" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">1h 0m</text>
-    <text x="24" y="79" fill="#3fb950" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">25% ━━━━━━━━━━━━━━━</text>
-    <text x="195" y="79" fill="#8b949e" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">─────────────────────────────────────────────</text>
-    <text x="24" y="101" fill="#c9d1d9" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">Weekly</text>
-    <text x="582" y="101" fill="#8b949e" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">1d</text>
-    <text x="24" y="123" fill="#3fb950" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">50% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</text>
-    <text x="330" y="123" fill="#8b949e" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">──────────────────────────────</text>
-    <text x="24" y="145" fill="#c9d1d9" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">Monthly</text>
-    <text x="582" y="145" fill="#8b949e" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">7d</text>
-    <text x="24" y="167" fill="#3fb950" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">66% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</text>
-    <text x="420" y="167" fill="#8b949e" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">────────────────────</text>
+  <desc id="demo-desc">The OpenCode Go panel in expanded mode, rendered by OpenTUI at the 40-column sidebar width with fake usage data. The 7 visible rows read: OpenCode Go                         full
+5-hour                             1h 0m
+25% ━━━━━━━━━───────────────────────────
+Weekly                                1d
+50% ━━━━━━━━━━━━━━━━━━──────────────────
+Monthly                               7d
+66% ━━━━━━━━━━━━━━━━━━━━━━━━────────────</desc>
+  <rect width="464" height="224" rx="14" fill="#0a0a0a"/>
+  <rect x="12.5" y="12.5" width="439" height="199" rx="10" fill="#141414" stroke="#2a2a2a"/>
+  <g font-family="'JetBrains Mono', SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="16">
+    <text x="32" y="40" dominant-baseline="central" textLength="110" lengthAdjust="spacingAndGlyphs" fill="#c9d1d9" font-weight="bold" xml:space="preserve">OpenCode Go</text>
+    <text x="392" y="40" dominant-baseline="central" textLength="40" lengthAdjust="spacingAndGlyphs" fill="#8b949e" xml:space="preserve">full</text>
+    <text x="32" y="64" dominant-baseline="central" textLength="60" lengthAdjust="spacingAndGlyphs" fill="#c9d1d9" xml:space="preserve">5-hour</text>
+    <text x="382" y="64" dominant-baseline="central" textLength="50" lengthAdjust="spacingAndGlyphs" fill="#8b949e" xml:space="preserve">1h 0m</text>
+    <rect x="72" y="86" width="90" height="4" fill="#3fb950"/>
+    <text x="32" y="88" dominant-baseline="central" textLength="30" lengthAdjust="spacingAndGlyphs" fill="#3fb950" xml:space="preserve">25%</text>
+    <rect x="162" y="87.5" width="270" height="1" fill="#8b949e"/>
+    <text x="32" y="112" dominant-baseline="central" textLength="60" lengthAdjust="spacingAndGlyphs" fill="#c9d1d9" xml:space="preserve">Weekly</text>
+    <text x="412" y="112" dominant-baseline="central" textLength="20" lengthAdjust="spacingAndGlyphs" fill="#8b949e" xml:space="preserve">1d</text>
+    <rect x="72" y="134" width="180" height="4" fill="#3fb950"/>
+    <text x="32" y="136" dominant-baseline="central" textLength="30" lengthAdjust="spacingAndGlyphs" fill="#3fb950" xml:space="preserve">50%</text>
+    <rect x="252" y="135.5" width="180" height="1" fill="#8b949e"/>
+    <text x="32" y="160" dominant-baseline="central" textLength="70" lengthAdjust="spacingAndGlyphs" fill="#c9d1d9" xml:space="preserve">Monthly</text>
+    <text x="412" y="160" dominant-baseline="central" textLength="20" lengthAdjust="spacingAndGlyphs" fill="#8b949e" xml:space="preserve">7d</text>
+    <rect x="72" y="182" width="240" height="4" fill="#3fb950"/>
+    <text x="32" y="184" dominant-baseline="central" textLength="30" lengthAdjust="spacingAndGlyphs" fill="#3fb950" xml:space="preserve">66%</text>
+    <rect x="312" y="183.5" width="120" height="1" fill="#8b949e"/>
+  </g>
 </svg>

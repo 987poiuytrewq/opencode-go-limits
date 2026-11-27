@@ -32,6 +32,10 @@ process.env.TZ = "UTC";
 const FIXED_NOW = Date.UTC(2026, 10, 27, 12, 45, 0);
 const SESSION_ID = "ses_demo_sidebar";
 
+// Content width of OpenCode's default session sidebar, so the captures match
+// what users actually see rather than an artificially wide panel.
+const SIDEBAR_COLUMNS = 40;
+
 interface DemoScenario {
   readonly mode: "expanded" | "pace";
   readonly width: number;
@@ -60,7 +64,7 @@ const paceBase = usageAt(FIXED_NOW, {
 const SCENARIOS: readonly DemoScenario[] = [
   {
     mode: "expanded",
-    width: 64,
+    width: SIDEBAR_COLUMNS,
     height: 14,
     usage: expandedBase,
     output: join(import.meta.dir, "expanded.svg"),
@@ -100,7 +104,7 @@ const SCENARIOS: readonly DemoScenario[] = [
   {
     // Pace: rolling is behind pace, weekly is ahead, monthly is limited.
     mode: "pace",
-    width: 64,
+    width: SIDEBAR_COLUMNS,
     height: 5,
     usage: {
       ...paceBase,
@@ -144,11 +148,11 @@ const SCENARIOS: readonly DemoScenario[] = [
         percentColumns.some(
           (column) => column < 0 || column !== percentColumns[0],
         ) ||
-        percentColumns[0] !== 60 ||
-        rowWidths.some((width) => width !== 64)
+        percentColumns[0] !== SIDEBAR_COLUMNS - 4 ||
+        rowWidths.some((width) => width !== SIDEBAR_COLUMNS)
       ) {
         throw new Error(
-          `[pace] Expected aligned labels/bars/percentages at width 64, got bars ${JSON.stringify(barColumns)}, percents ${JSON.stringify(percentColumns)}, widths ${JSON.stringify(rowWidths)} in ${JSON.stringify(lines)}`,
+          `[pace] Expected aligned labels/bars/percentages at width ${SIDEBAR_COLUMNS}, got bars ${JSON.stringify(barColumns)}, percents ${JSON.stringify(percentColumns)}, widths ${JSON.stringify(rowWidths)} in ${JSON.stringify(lines)}`,
         );
       }
 
@@ -169,14 +173,25 @@ const SCENARIOS: readonly DemoScenario[] = [
   },
 ];
 
-const PAGE_BG = "#0d1117";
+// Window chrome modelled on OpenCode's default dark theme: a near-black
+// terminal behind a slightly raised sidebar panel.
+const WINDOW_BG = "#0a0a0a";
+const PANEL_BG = "#141414";
+const PANEL_BORDER = "#2a2a2a";
 const MONO_FONT =
-  "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace";
-const CHAR_WIDTH = 9;
-const BODY_FONT_SIZE = 15;
-const LINE_HEIGHT = 22;
-const PADDING_X = 24;
-const PADDING_Y = 20;
+  "'JetBrains Mono', SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace";
+// One terminal cell. Text is stretched to exactly this pitch with `textLength`
+// so columns line up regardless of which monospace font the viewer has.
+const CELL_WIDTH = 10;
+const CELL_HEIGHT = 24;
+const FONT_SIZE = 16;
+const PANEL_PADDING_X = 20;
+const PANEL_PADDING_Y = 16;
+const WINDOW_MARGIN = 12;
+const RADIUS = 10;
+// Box-drawing bar glyphs are drawn as rectangles: font glyphs for `━` and `─`
+// rarely tile seamlessly, which leaves gaps and misaligned bar ends.
+const BAR_GLYPHS: Readonly<Record<string, number>> = { "━": 4, "─": 1 };
 
 interface FrozenGlobals {
   readonly original: {
@@ -363,6 +378,50 @@ function hasBoldTitle(frame: CapturedFrame): boolean | undefined {
   );
 }
 
+interface BarRun {
+  readonly column: number;
+  readonly cells: number;
+  readonly thickness: number;
+  readonly fill: string;
+}
+
+/** Split a draw into plain-text runs and box-drawing bar runs. */
+function splitDraw(draw: TextDraw): { texts: TextDraw[]; bars: BarRun[] } {
+  const texts: TextDraw[] = [];
+  const bars: BarRun[] = [];
+  const chars = [...draw.text];
+  let index = 0;
+  while (index < chars.length) {
+    const start = index;
+    const thickness = BAR_GLYPHS[chars[index] as string];
+    if (thickness !== undefined) {
+      while (index < chars.length && chars[index] === chars[start]) index++;
+      bars.push({
+        column: draw.column + start,
+        cells: index - start,
+        thickness,
+        fill: draw.fill,
+      });
+    } else {
+      while (
+        index < chars.length &&
+        BAR_GLYPHS[chars[index] as string] === undefined
+      )
+        index++;
+      const text = chars.slice(start, index).join("");
+      const leading = text.length - text.trimStart().length;
+      if (text.trim().length > 0) {
+        texts.push({
+          ...draw,
+          text: text.trim(),
+          column: draw.column + start + leading,
+        });
+      }
+    }
+  }
+  return { texts, bars };
+}
+
 function buildSvg(
   frame: CapturedFrame,
   scenario: Pick<DemoScenario, "mode" | "title">,
@@ -372,39 +431,46 @@ function buildSvg(
     throw new Error("Expected the widget to render at least one visible row");
   }
 
-  const textWidth = Math.max(
-    ...lines.map((line) => line.endColumn * CHAR_WIDTH),
-  );
-  const svgWidth = textWidth + PADDING_X * 2;
-  const svgHeight = lines.length * LINE_HEIGHT + PADDING_Y * 2;
+  const panelWidth = frame.cols * CELL_WIDTH + PANEL_PADDING_X * 2;
+  const panelHeight = lines.length * CELL_HEIGHT + PANEL_PADDING_Y * 2;
+  const svgWidth = panelWidth + WINDOW_MARGIN * 2;
+  const svgHeight = panelHeight + WINDOW_MARGIN * 2;
+  const originX = WINDOW_MARGIN + PANEL_PADDING_X;
+  const originY = WINDOW_MARGIN + PANEL_PADDING_Y;
 
-  const textX = (column: number) => PADDING_X + column * CHAR_WIDTH;
-  const baselineY = (index: number) =>
-    PADDING_Y + BODY_FONT_SIZE + index * LINE_HEIGHT;
-
-  for (const line of lines) {
+  const elements: string[] = [];
+  lines.forEach((line, row) => {
+    const top = originY + row * CELL_HEIGHT;
     for (const draw of line.draws) {
-      assertContrast("Captured sidebar text", draw.fill, PAGE_BG);
+      assertContrast("Captured sidebar text", draw.fill, PANEL_BG);
+      const { texts, bars } = splitDraw(draw);
+      for (const bar of bars) {
+        const y = top + (CELL_HEIGHT - bar.thickness) / 2;
+        elements.push(
+          `    <rect x="${originX + bar.column * CELL_WIDTH}" y="${y}" width="${bar.cells * CELL_WIDTH}" height="${bar.thickness}" fill="${bar.fill}"/>`,
+        );
+      }
+      for (const text of texts) {
+        const weight = text.bold ? ' font-weight="bold"' : "";
+        const length = [...text.text].length * CELL_WIDTH;
+        elements.push(
+          `    <text x="${originX + text.column * CELL_WIDTH}" y="${top + CELL_HEIGHT / 2}" dominant-baseline="central" textLength="${length}" lengthAdjust="spacingAndGlyphs" fill="${text.fill}"${weight} xml:space="preserve">${escapeXml(text.text)}</text>`,
+        );
+      }
     }
-  }
-
-  const renderedLines = lines
-    .flatMap((line, index) =>
-      line.draws.map((draw) => {
-        const weight = draw.bold ? ' font-weight="bold"' : "";
-        return `    <text x="${textX(draw.column)}" y="${baselineY(index)}" fill="${draw.fill}" font-family="${MONO_FONT}" font-size="${BODY_FONT_SIZE}"${weight} xml:space="preserve">${escapeXml(draw.text)}</text>`;
-      }),
-    )
-    .join("\n");
+  });
 
   const visibleText = lines.map(lineText).join("\n");
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}" role="img" aria-labelledby="demo-title demo-desc">
   <title id="demo-title">${escapeXml(scenario.title)}</title>
-  <desc id="demo-desc">Terminal-style screenshot of the OpenCode Go sidebar in ${scenario.mode} mode, captured from a ${frame.cols} by ${frame.rows} character frame rendered with fake usage data. The ${lines.length} visible rows read: ${escapeXml(visibleText)}</desc>
-  <rect width="${svgWidth}" height="${svgHeight}" fill="${PAGE_BG}"/>
-${renderedLines}
+  <desc id="demo-desc">The OpenCode Go panel in ${scenario.mode} mode, rendered by OpenTUI at the ${frame.cols}-column sidebar width with fake usage data. The ${lines.length} visible rows read: ${escapeXml(visibleText)}</desc>
+  <rect width="${svgWidth}" height="${svgHeight}" rx="${RADIUS + 4}" fill="${WINDOW_BG}"/>
+  <rect x="${WINDOW_MARGIN + 0.5}" y="${WINDOW_MARGIN + 0.5}" width="${panelWidth - 1}" height="${panelHeight - 1}" rx="${RADIUS}" fill="${PANEL_BG}" stroke="${PANEL_BORDER}"/>
+  <g font-family="${MONO_FONT}" font-size="${FONT_SIZE}">
+${elements.join("\n")}
+  </g>
 </svg>
 `;
 }
