@@ -273,9 +273,9 @@ describe("compact mode", () => {
       expect(lines[0]).not.toContain("⚠");
       expect(lines[1]).toBe("5-hour window  ⚠ 14:15");
       const spans = testRenderer.captureSpans();
-      expect(spanColor(spans, "66%")).toBe("#00ff00");
-      expect(spanColor(spans, "5-hour window")).toBe("#ffffff");
-      expect(spanColor(spans, "⚠ 14:15")).toBe("#ffff00");
+      expect(spanColor(spans, "66%")).toBe("#3fb950");
+      expect(spanColor(spans, "5-hour window")).toBe("#c9d1d9");
+      expect(spanColor(spans, "⚠ 14:15")).toBe("#d29922");
       cleanup();
     } finally {
       nowSpy.mockRestore();
@@ -299,9 +299,9 @@ describe("compact mode", () => {
       expect(lines[0]).toContain("80%  ⚠");
       expect(lines[1]).toContain("Weekly ✓ resets 1d");
       const spans = testRenderer.captureSpans();
-      expect(spanColor(spans, "80%  ⚠")).toBe("#ffff00");
-      expect(spanColor(spans, "Weekly")).toBe("#ffffff");
-      expect(spanColor(spans, "✓ resets 1d")).toBe("#00ff00");
+      expect(spanColor(spans, "80%  ⚠")).toBe("#d29922");
+      expect(spanColor(spans, "Weekly")).toBe("#c9d1d9");
+      expect(spanColor(spans, "✓ resets 1d")).toBe("#3fb950");
       cleanup();
     } finally {
       await testRenderer.dispose();
@@ -327,7 +327,7 @@ describe("compact mode", () => {
       const lines = nonEmptyLines(testRenderer.captureCharFrame());
       expect(lines).toHaveLength(2);
       expect(lines[0]).toContain("100% ✖");
-      expect(spanColor(testRenderer.captureSpans(), "100% ✖")).toBe("#ff0000");
+      expect(spanColor(testRenderer.captureSpans(), "100% ✖")).toBe("#f85149");
       cleanup();
     } finally {
       await testRenderer.dispose();
@@ -353,8 +353,8 @@ describe("compact mode", () => {
       expect(lines).toHaveLength(2);
       expect(lines[1]).toBe("5-hour window ✖ limit reached");
       const spans = testRenderer.captureSpans();
-      expect(spanColor(spans, "5-hour window")).toBe("#ffffff");
-      expect(spanColor(spans, "✖ limit reached")).toBe("#ff0000");
+      expect(spanColor(spans, "5-hour window")).toBe("#c9d1d9");
+      expect(spanColor(spans, "✖ limit reached")).toBe("#f85149");
       cleanup();
     } finally {
       await testRenderer.dispose();

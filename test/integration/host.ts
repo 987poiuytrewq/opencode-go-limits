@@ -77,12 +77,12 @@ export function createMockHost(input: MockHostOptions): MockHost {
     attention: {},
     theme: {
       text: {
-        base: "#ffffff",
-        muted: "#808080",
+        base: "#c9d1d9",
+        muted: "#8b949e",
         feedback: {
-          error: { base: "#ff0000" },
-          warning: { base: "#ffff00" },
-          success: { base: "#00ff00" },
+          error: { base: "#f85149" },
+          warning: { base: "#d29922" },
+          success: { base: "#3fb950" },
         },
       },
     },

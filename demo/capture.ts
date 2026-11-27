@@ -12,11 +12,12 @@ import "../test/preload";
 
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import type {
-  CapturedFrame,
-  CapturedLine,
-  CapturedSpan,
-  RGBA,
+import {
+  TextAttributes,
+  type CapturedFrame,
+  type CapturedLine,
+  type CapturedSpan,
+  type RGBA,
 } from "@opentui/core";
 import {
   createMockHost,
@@ -129,17 +130,14 @@ const SCENARIOS: readonly DemoScenario[] = [
   },
 ];
 
-const PAGE_BG = "#0b0e14";
-const WINDOW_BG = "#0d1117";
-const WINDOW_BORDER = "#30363d";
-const TITLE_BG = "#161b26";
-const TITLE_TEXT = "#c9d1d9";
-const CAPTION_TEXT = "#8b949e";
+const PAGE_BG = "#0d1117";
 const MONO_FONT =
   "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace";
 const CHAR_WIDTH = 9;
 const BODY_FONT_SIZE = 15;
 const LINE_HEIGHT = 22;
+const PADDING_X = 24;
+const PADDING_Y = 20;
 
 interface FrozenGlobals {
   readonly original: {
@@ -161,6 +159,7 @@ interface TextDraw {
   readonly text: string;
   readonly column: number;
   readonly fill: string;
+  readonly bold: boolean;
 }
 
 interface RenderedLine {
@@ -285,7 +284,12 @@ function drawableLines(frame: CapturedFrame): RenderedLine[] {
         column += span.width;
         const text = span.text.trimEnd();
         if (text.trim().length === 0) continue;
-        draws.push({ text, column: start, fill: hexColor(span.fg) });
+        draws.push({
+          text,
+          column: start,
+          fill: hexColor(span.fg),
+          bold: (span.attributes & TextAttributes.BOLD) !== 0,
+        });
         endColumn = Math.max(endColumn, column);
       }
 
@@ -306,6 +310,17 @@ function lineText(line: RenderedLine): string {
   return text;
 }
 
+/** The real UI renders the heading bold; keep that attribute in the SVG. */
+function hasBoldTitle(frame: CapturedFrame): boolean {
+  return frame.lines.some((line) =>
+    line.spans.some(
+      (span) =>
+        (span.attributes & TextAttributes.BOLD) !== 0 &&
+        span.text.trim() === "OpenCode Go",
+    ),
+  );
+}
+
 function buildSvg(
   frame: CapturedFrame,
   scenario: Pick<DemoScenario, "mode" | "title">,
@@ -315,39 +330,28 @@ function buildSvg(
     throw new Error("Expected the widget to render at least one visible row");
   }
 
-  const windowX = 24;
-  const windowY = 16;
-  const titleBarHeight = 32;
-  const bodyPadding = 24;
-  const textOffsetY = 38;
-  const bodyWidth = Math.max(
-    540,
-    ...lines.map((line) => line.endColumn * CHAR_WIDTH + bodyPadding * 2),
+  const textWidth = Math.max(
+    ...lines.map((line) => line.endColumn * CHAR_WIDTH),
   );
-  const bodyHeight = lines.length * LINE_HEIGHT + 50;
-  const windowHeight = titleBarHeight + bodyHeight;
-  const windowWidth = bodyWidth;
-  const svgWidth = windowWidth + windowX * 2;
-  const captionY = windowY + windowHeight + 30;
-  const svgHeight = captionY + 18;
+  const svgWidth = textWidth + PADDING_X * 2;
+  const svgHeight = lines.length * LINE_HEIGHT + PADDING_Y * 2;
 
-  const textX = (column: number) => windowX + bodyPadding + column * CHAR_WIDTH;
-  const firstBaseline = windowY + titleBarHeight + textOffsetY;
+  const textX = (column: number) => PADDING_X + column * CHAR_WIDTH;
+  const baselineY = (index: number) =>
+    PADDING_Y + BODY_FONT_SIZE + index * LINE_HEIGHT;
 
   for (const line of lines) {
     for (const draw of line.draws) {
-      assertContrast("Captured sidebar text", draw.fill, WINDOW_BG);
+      assertContrast("Captured sidebar text", draw.fill, PAGE_BG);
     }
   }
-  assertContrast("Window title", TITLE_TEXT, TITLE_BG);
-  assertContrast("Demo caption", CAPTION_TEXT, PAGE_BG);
 
   const renderedLines = lines
     .flatMap((line, index) =>
-      line.draws.map(
-        (draw) =>
-          `    <text x="${textX(draw.column)}" y="${firstBaseline + index * LINE_HEIGHT}" fill="${draw.fill}" font-family="${MONO_FONT}" font-size="${BODY_FONT_SIZE}" xml:space="preserve">${escapeXml(draw.text)}</text>`,
-      ),
+      line.draws.map((draw) => {
+        const weight = draw.bold ? ' font-weight="bold"' : "";
+        return `    <text x="${textX(draw.column)}" y="${baselineY(index)}" fill="${draw.fill}" font-family="${MONO_FONT}" font-size="${BODY_FONT_SIZE}"${weight} xml:space="preserve">${escapeXml(draw.text)}</text>`;
+      }),
     )
     .join("\n");
 
@@ -358,24 +362,7 @@ function buildSvg(
   <title id="demo-title">${escapeXml(scenario.title)}</title>
   <desc id="demo-desc">Terminal-style screenshot of the OpenCode Go sidebar in ${scenario.mode} mode, captured from a ${frame.cols} by ${frame.rows} character frame rendered with fake usage data. The ${lines.length} visible rows read: ${escapeXml(visibleText)}</desc>
   <rect width="${svgWidth}" height="${svgHeight}" fill="${PAGE_BG}"/>
-  <rect x="${windowX}" y="${windowY + 4}" width="${windowWidth}" height="${windowHeight}" rx="10" fill="#000000" opacity="0.45"/>
-  <defs>
-    <clipPath id="window-clip">
-      <rect x="${windowX}" y="${windowY}" width="${windowWidth}" height="${windowHeight}" rx="10"/>
-    </clipPath>
-  </defs>
-  <g clip-path="url(#window-clip)">
-    <rect x="${windowX}" y="${windowY}" width="${windowWidth}" height="${windowHeight}" fill="${WINDOW_BG}"/>
-    <rect x="${windowX}" y="${windowY}" width="${windowWidth}" height="${titleBarHeight}" fill="${TITLE_BG}"/>
-    <line x1="${windowX}" y1="${windowY + titleBarHeight}" x2="${windowX + windowWidth}" y2="${windowY + titleBarHeight}" stroke="${WINDOW_BORDER}"/>
-    <circle cx="${windowX + 20}" cy="${windowY + 16}" r="5" fill="#ff5f57"/>
-    <circle cx="${windowX + 36}" cy="${windowY + 16}" r="5" fill="#febc2e"/>
-    <circle cx="${windowX + 52}" cy="${windowY + 16}" r="5" fill="#28c840"/>
-    <text x="${windowX + 68}" y="${windowY + 20}" fill="${TITLE_TEXT}" font-family="${MONO_FONT}" font-size="11">OpenCode — session sidebar (${scenario.mode})</text>
 ${renderedLines}
-  </g>
-  <rect x="${windowX}" y="${windowY}" width="${windowWidth}" height="${windowHeight}" rx="10" fill="none" stroke="${WINDOW_BORDER}"/>
-  <text x="${windowX}" y="${captionY}" fill="${CAPTION_TEXT}" font-family="${MONO_FONT}" font-size="11">Rendered with @opentui/core/testing + @opentui/solid · fake Go usage · frozen clock</text>
 </svg>
 `;
 }
@@ -440,6 +427,11 @@ async function main(): Promise<void> {
         const charFrame = setup.captureCharFrame();
         captured = setup.captureSpans();
         scenario.validate(drawableLines(captured).map(lineText), charFrame);
+        if (!hasBoldTitle(captured)) {
+          throw new Error(
+            `[${scenario.mode}] Expected a bold OpenCode Go title span`,
+          );
+        }
 
         if (mockHost.requests.length !== 1) {
           throw new Error(
