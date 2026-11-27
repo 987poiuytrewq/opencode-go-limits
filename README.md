@@ -1,7 +1,7 @@
 # OpenCode Go Limits
 
 [![CI](https://github.com/987poiuytrewq/opencode-go-limits/actions/workflows/ci.yml/badge.svg)](https://github.com/987poiuytrewq/opencode-go-limits/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/opencode-go-usage-sidebar.svg)](https://www.npmjs.com/package/opencode-go-usage-sidebar)
+[![npm](https://img.shields.io/npm/v/opencode-go-usage-limits.svg)](https://www.npmjs.com/package/opencode-go-usage-limits)
 
 A TUI-only [OpenCode](https://opencode.ai) plugin that shows your OpenCode Go
 usage in the session sidebar. It renders the rolling 5-hour, weekly, and
@@ -9,7 +9,7 @@ monthly meters as progress bars, with the percentage used, a reset countdown,
 and an estimated runout warning when usage is on course to hit a limit before
 it resets.
 
-The npm package is `opencode-go-usage-sidebar`. The GitHub repository keeps the
+The npm package is `opencode-go-usage-limits`. The GitHub repository keeps the
 name [opencode-go-limits](https://github.com/987poiuytrewq/opencode-go-limits).
 
 The plugin is deliberately small: it reads the usage meters that OpenCode
@@ -58,14 +58,14 @@ Add the package to `~/.config/opencode/cli.json` (or
 ```json
 {
   "$schema": "https://opencode.ai/v2/cli.json",
-  "plugins": ["opencode-go-usage-sidebar"]
+  "plugins": ["opencode-go-usage-limits"]
 }
 ```
 
 Or let the OpenCode CLI install and register it:
 
 ```sh
-opencode plugin add opencode-go-usage-sidebar
+opencode plugin add opencode-go-usage-limits
 ```
 
 Then run `/reload` in the TUI, or restart OpenCode. The **OpenCode Go** panel is
@@ -111,7 +111,7 @@ Options go in the same plugin entry, under `options`. Every option is optional:
   "$schema": "https://opencode.ai/v2/cli.json",
   "plugins": [
     {
-      "package": "opencode-go-usage-sidebar",
+      "package": "opencode-go-usage-limits",
       "options": {
         "refreshMs": 30000
       }
@@ -206,7 +206,7 @@ breakdowns and **Settings › Billing** for billing and balance; members can ope
 
 | You see | What to do |
 | --- | --- |
-| No **OpenCode Go** panel | Run `opencode plugin list` to confirm the plugin is listed and active rather than failed or skipped. Confirm the entry in `cli.json` names `opencode-go-usage-sidebar` (or, for a local checkout, the absolute path to the clone root, the directory containing `package.json`). For a local checkout, also confirm `bun install` has run there. Then run `/reload` or restart OpenCode. Load failures are also written to `~/.local/share/opencode/log/opencode.log`. |
+| No **OpenCode Go** panel | Run `opencode plugin list` to confirm the plugin is listed and active rather than failed or skipped. Confirm the entry in `cli.json` names `opencode-go-usage-limits` (or, for a local checkout, the absolute path to the clone root, the directory containing `package.json`). For a local checkout, also confirm `bun install` has run there. Then run `/reload` or restart OpenCode. Load failures are also written to `~/.local/share/opencode/log/opencode.log`. |
 | **OpenCode Go usage is unavailable for this workspace** | OpenCode returned no Go meters. Confirm the workspace has an active OpenCode Go subscription and that OpenCode is signed in to that workspace. A workspace without Go has no allowance to display. |
 | A network, authentication, or endpoint error appears in the panel | The panel shows the error message from the usage request. Check your connection and OpenCode sign-in, then wait for the next refresh. If it persists, check the OpenCode log. |
 | Usage looks stale | The panel refreshes once per `refreshMs` (60 seconds by default) while the TUI is running. Lower `refreshMs` for a faster cadence, down to 15 seconds, then reload. |
@@ -315,7 +315,7 @@ The integration tests use a path-safe Solid transform preload in
 
 ## Releasing
 
-Releases publish the npm package `opencode-go-usage-sidebar` from
+Releases publish the npm package `opencode-go-usage-limits` from
 `.github/workflows/release.yml` when a GitHub release is published. The
 repository name (`opencode-go-limits`) is unchanged; only the npm package name
 is distinct.
@@ -342,7 +342,7 @@ first release:
 1. Bump `version` in `package.json`, merge to `main`, and publish the first
    version manually from that commit after signing in with 2FA:
    `npm publish --access public`.
-2. On npmjs.com, open **Packages › opencode-go-usage-sidebar › Settings ›
+2. On npmjs.com, open **Packages › opencode-go-usage-limits › Settings ›
    Trusted publishing** and add a **GitHub Actions** publisher with:
    - Organization or user: `987poiuytrewq`
    - Repository: `opencode-go-limits`

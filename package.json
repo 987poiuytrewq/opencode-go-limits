@@ -1,5 +1,5 @@
 {
-  "name": "opencode-go-usage-sidebar",
+  "name": "opencode-go-usage-limits",
   "version": "0.1.0",
   "description": "TUI-only OpenCode plugin that shows OpenCode Go rolling, weekly, and monthly usage limits in the session sidebar.",
   "keywords": [
