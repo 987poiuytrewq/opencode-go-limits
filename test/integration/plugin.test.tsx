@@ -590,35 +590,26 @@ describe("compact mode", () => {
   });
 });
 
-describe("pace mode", () => {
-  test("renders the four-row pace view when mode is not configured", async () => {
+describe("default and pace modes", () => {
+  test("renders the compact healthy view when mode is not configured", async () => {
     const testRenderer = await createTestRenderer({ width: 64, height: 6 });
     const fixedNow = new Date(2026, 10, 27, 12, 45, 0, 0).getTime();
     const nowSpy = spyOn(Date, "now").mockReturnValue(fixedNow);
     try {
       const host = createMockHost({
         renderer: testRenderer.renderer,
-        usage: usageAt(fixedNow),
+        usage: usageAt(fixedNow, { rolling: 10, weekly: 20, monthly: 66 }),
       });
       const cleanup = await mountHost(host);
       await testRenderer.flush();
 
       const lines = nonEmptyLines(testRenderer.captureCharFrame());
-      expect(lines).toHaveLength(4);
-      expect(lines[0]).toBe("OpenCode Go");
-      expect(lines[1]).toContain("5-hour");
-      expect(lines[1]).toMatch(/ 25%$/);
-      expect(lines[2]).toContain("Weekly");
-      expect(lines[2]).toMatch(/ 50%$/);
-      expect(lines[3]).toContain("Monthly");
-      expect(lines[3]).toMatch(/ 80%$/);
+      expect(lines).toHaveLength(1);
+      expect(lines[0]).toMatch(/^OpenCode Go\s+●$/);
 
       const spans = testRenderer.captureSpans();
-      expect(spanBold(spans, "OpenCode Go")).toBe(true);
-      const barColumns = ["5-hour", "Weekly", "Monthly"].map((label) =>
-        barStartColumn(spans, label),
-      );
-      expect(barColumns).toEqual([8, 8, 8]);
+      expect(spanBold(spans, "OpenCode Go")).toBe(false);
+      expect(spanColor(spans, "●")).toBe("#3fb950");
 
       cleanup();
     } finally {

@@ -6,7 +6,7 @@ export const MIN_REFRESH_MS = 15_000;
 export const MAX_REFRESH_MS = 30 * 60_000;
 
 /** Sidebar layout when `mode` is missing or not a supported value. */
-export const DEFAULT_MODE = "pace";
+export const DEFAULT_MODE = "compact";
 
 export type SidebarMode = "expanded" | "compact" | "pace";
 
@@ -22,7 +22,7 @@ export interface PluginSettings {
  * finite values are clamped to the supported range so a bad config cannot
  * hammer the server or leave the sidebar stale. `mode` is optional too: only
  * the exact `expanded`, `compact`, or `pace` values select a layout, and any
- * other value falls back to the default pace layout.
+ * other value falls back to the default compact layout.
  */
 export function pluginSettings(options: unknown): PluginSettings {
   if (typeof options !== "object" || options === null) {

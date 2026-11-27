@@ -5,13 +5,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 A TUI-only [OpenCode](https://opencode.ai) plugin that shows your OpenCode Go
-usage in the session sidebar. By default it renders the rolling 5-hour, weekly,
-and monthly meters as a pace view that compares each meter with how much of its
-window has already elapsed. An optional expanded layout shows the same meters
-as two-line bars with the percentage used, a reset countdown, and an estimated
-runout warning when usage is on course to hit a limit before it resets; an
-optional compact layout collapses to a single healthy status line and expands
-to two rows when a meter needs attention.
+usage in the session sidebar. By default it shows a compact status: a single
+healthy line, expanding to two rows when any meter needs attention. Optional
+pace mode compares each meter with how much of its window has elapsed; expanded
+mode shows two-line bars with percentages, reset countdowns, and estimated
+runout warnings.
 
 The npm package and GitHub repository are both named
 [opencode-go-usage-limits](https://github.com/987poiuytrewq/opencode-go-usage-limits).
@@ -20,12 +18,20 @@ The plugin is deliberately small: it reads the usage meters that OpenCode
 already has access to, follows your active OpenCode theme, and does not store or
 display API keys, token spend, or billing details.
 
-Pace mode (the default) compares each meter with the elapsed portion of its
-window on one composite bar beneath a bold title:
+Compact mode is the default. When all three meters are healthy, it shows a
+normal-text `OpenCode Go` title with a green `●`; it expands to two rows when a
+meter needs attention:
+
+![OpenCode Go compact sidebar showing a normal-text title and a green healthy indicator](demo/compact.svg)
+
+*Compact mode in the healthy state, captured from deterministic fake usage data.*
+
+Pace mode compares each meter with the elapsed portion of its window on one
+composite bar beneath a bold title:
 
 ![OpenCode Go pace sidebar with a bold title, a behind-pace 5-hour, an ahead-of-pace weekly meter, and a critical monthly meter at 100%](demo/pace.svg)
 
-*Pace mode (the default), captured from the real OpenTUI renderer with deterministic fake usage data.*
+*Pace mode, captured from the real OpenTUI renderer with deterministic fake usage data.*
 
 Expanded mode shows all three Go meters as two-line progress bars with their
 reset countdowns:
@@ -34,27 +40,16 @@ reset countdowns:
 
 *Expanded mode, captured from deterministic fake usage data.*
 
-Compact mode is a single line while all three meters are healthy: a normal-text
-`OpenCode Go` title on the left and a green `●` indicator on the right. When
-any meter is warning or critical, it expands to two rows with a bold title, the
-monthly percentage, and the most urgent short-window status:
-
-![OpenCode Go compact sidebar showing a normal-text title and a green healthy indicator](demo/compact.svg)
-
-*Compact mode in the healthy state, captured from deterministic fake usage data.*
-
 ## Features
 
 - **All three Go meters** in one sidebar panel: 5-hour, weekly, and monthly.
-- **Pace view by default:** a bold title plus one row per meter with a fixed
+- **Compact view by default:** one healthy status line with a normal-text title
+  and a green `●`, expanding to two rows when any meter needs attention.
+- **Optional pace view:** a bold title plus one row per meter with a fixed
   label column, a composite bar comparing usage with the elapsed portion of the
   5-hour, weekly, or monthly window, and a right-aligned percentage.
 - **Optional expanded mode:** all three meters as two-line bars with the
   percentage used, a responsive `━` / `─` progress bar, and a reset countdown.
-- **Optional compact mode:** one healthy status line with a normal-text title
-  and a green `●`, expanding to two rows with a bold title, the monthly
-  percentage, and the most urgent short-window meter when anything needs
-  attention.
 - **Runout warnings** projected from average usage since the current window
   began, shown in expanded mode.
 - **Theme-aware colors:** success, warning, and error colors from the active
@@ -147,15 +142,15 @@ Options go in the same plugin entry, under `options`. Every option is optional:
       "package": "opencode-go-usage-limits",
       "options": {
         "refreshMs": 30000,
-        "mode": "pace"
+        "mode": "compact"
       }
     }
   ]
 }
 ```
 
-`"pace"` is the default layout, so the `mode` line can be omitted. Use
-`"expanded"` or `"compact"` to opt into a different layout.
+`"compact"` is the default layout, so the `mode` line can be omitted. Use
+`"pace"` or `"expanded"` to opt into a different layout.
 
 For a local checkout, keep the object entry but point `package` at the clone's
 absolute path instead of the npm package name.
@@ -163,16 +158,16 @@ absolute path instead of the npm package name.
 | Option | Default | Description |
 | --- | --- | --- |
 | `refreshMs` | `60000` | How often the sidebar reloads usage, in milliseconds. Values below `15000` are raised to 15 seconds; values above `1800000` are lowered to 30 minutes. A value that is not a finite number falls back to the default. |
-| `mode` | `"pace"` | Sidebar layout. `"pace"` shows a bold title plus exactly three one-line rows with a composite usage-versus-elapsed bar per meter. `"expanded"` shows all three meters as two-line bars with reset countdowns and runout warnings. `"compact"` shows a single normal-text title and green healthy indicator while all meters are healthy, and expands to two rows with a bold title, the monthly percentage, plus the most urgent 5-hour or weekly status when any meter is warning or critical. Any value other than the exact strings `"pace"`, `"expanded"`, or `"compact"` falls back to `"pace"`. |
+| `mode` | `"compact"` | Sidebar layout. `"compact"` shows a single normal-text title and green healthy indicator while all meters are healthy, and expands to two rows with a bold title, the monthly percentage, plus the most urgent 5-hour or weekly status when any meter is warning or critical. `"pace"` shows a bold title plus three one-line rows with a composite usage-versus-elapsed bar per meter. `"expanded"` shows all three meters as two-line bars with reset countdowns and runout warnings. Any value other than the exact strings `"pace"`, `"expanded"`, or `"compact"` falls back to `"compact"`. |
 
 The interval starts when the sidebar panel mounts. Refreshes are skipped while
 a previous request is still running, so a slow or offline server cannot build
 up a queue of requests. The plugin has no manual refresh command; if you change
 `refreshMs`, reload OpenCode to apply the new value.
 
-### Pace mode (default)
+### Pace mode (optional)
 
-Pace mode is the default, so it needs no configuration. It renders four rows: a
+Set `"mode": "pace"` to enable pace mode. It renders four rows: a
 bold **OpenCode Go** title, then one row per Go window. Each meter row reserves a
 fixed label column, then shows one composite bar that compares usage with how
 much of the window has elapsed, then a right-aligned percentage at the sidebar's
@@ -386,8 +381,8 @@ breakdowns and **Settings › Billing** for billing and balance; members can ope
 | The bars look short | The bar uses the sidebar's measured width minus the columns reserved for its label and percentage, with a one-column minimum. Widen the sidebar to give the bars more room. |
 | The compact rows are cut off | Compact mode clips rather than wraps at narrow sidebar widths. Widen the sidebar if the title, healthy indicator, monthly summary, or short-window detail does not fit. |
 | The pace rows are cut off | Pace mode also clips rather than wraps. Widen the sidebar if a label, percentage, or bar does not fit. |
-| `mode` is ignored | Use the exact string `"pace"`, `"expanded"`, or `"compact"` in `options` on the plugin entry in `cli.json`. Any other value falls back to `"pace"`, and you must reload OpenCode after changing it. |
-| The panel shows pace bars | Pace is the default. Set `"mode": "expanded"` for two-line meters with runout warnings, or `"mode": "compact"` for the healthy status line and compact summary, then reload OpenCode. |
+| `mode` is ignored | Use the exact string `"pace"`, `"expanded"`, or `"compact"` in `options` on the plugin entry in `cli.json`. Any other value falls back to `"compact"`, and you must reload OpenCode after changing it. |
+| The panel shows compact mode | Compact is the default. Set `"mode": "pace"` for three usage-versus-pace bars, or `"mode": "expanded"` for two-line meters with runout warnings, then reload OpenCode. |
 
 ## How it works
 
@@ -397,10 +392,10 @@ When the slot renders, the widget:
 
 1. Calls `context.client.experimental.usage.limits()` for the current location.
 2. Displays the returned `go.rolling`, `go.weekly`, and `go.monthly` meters as
-   the title plus three composite usage-versus-pace bars by default, or as all
-   three two-line meters when `mode` is `"expanded"`, or as the healthy status
-   line or detailed monthly summary plus the most urgent short-window meter
-   when `mode` is `"compact"`.
+   a compact healthy status line or detailed monthly summary plus the most
+   urgent short-window meter by default, or as the title plus three composite
+   usage-versus-pace bars when `mode` is `"pace"`, or as all three two-line
+   meters when `mode` is `"expanded"`.
 3. Refreshes on the configured interval and listens for renderer resize and
    frame events to remeasure the bar.
 4. Removes its timer and renderer listeners when the slot is unloaded.
