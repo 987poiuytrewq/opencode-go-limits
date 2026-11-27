@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/987poiuytrewq/opencode-go-usage-limits/actions/workflows/ci.yml/badge.svg)](https://github.com/987poiuytrewq/opencode-go-usage-limits/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/opencode-go-usage-limits.svg)](https://www.npmjs.com/package/opencode-go-usage-limits)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 A TUI-only [OpenCode](https://opencode.ai) plugin that shows your OpenCode Go
 usage in the session sidebar. It renders the rolling 5-hour, weekly, and
@@ -16,10 +17,17 @@ The plugin is deliberately small: it reads the usage meters that OpenCode
 already has access to, follows your active OpenCode theme, and does not store or
 display API keys, token spend, or billing details.
 
-![OpenCode Go compact sidebar showing Monthly at 66% and a 5-hour window projected runout at 14:15](demo/demo.svg)
+Expanded mode (the default) shows all three Go meters:
 
-*Compact mode, captured from the real OpenTUI renderer with deterministic fake
-usage data.*
+![OpenCode Go expanded sidebar showing the 5-hour window at 25%, Weekly at 50%, and Monthly at 66%](demo/expanded.svg)
+
+*Expanded mode, captured from the real OpenTUI renderer with deterministic fake usage data.*
+
+Compact mode reduces the panel to two rows:
+
+![OpenCode Go compact sidebar showing 66% for the monthly meter and a 5-hour window projected runout at 14:15](demo/compact.svg)
+
+*Compact mode, captured from deterministic fake usage data.*
 
 ## Features
 
@@ -145,23 +153,24 @@ up a queue of requests. The plugin has no manual refresh command; if you change
 
 Set `"mode": "compact"` to reduce the panel to two rows. The first row keeps the
 `OpenCode Go` title on the left and always summarizes the monthly meter on the
-right. The second row shows the most urgent short-window meter (5-hour window or
-weekly), with its status symbol and either a projected runout or reset detail:
+right as a bare percentage; the title supplies the monthly context. The second
+row shows the most urgent short-window meter (5-hour window or weekly), with its
+status symbol and either a projected runout or reset detail:
 
 ```text
-OpenCode Go                              Monthly 66%
+OpenCode Go                              66%
 5-hour window  ⚠ 14:15
 ```
 
-The monthly summary stays plain when the month is healthy. When the monthly
-meter is approaching its limit (80% or more, or projected to run out before it
-resets), the value carries `⚠` and the theme's warning color. When it is
-exhausted or marked limited by the API, it carries `✖` and the theme's error
-color:
+The monthly percentage uses the theme's success color when the month is
+healthy. When the monthly meter is approaching its limit (80% or more, or
+projected to run out before it resets), the value carries `⚠` and the theme's
+warning color. When it is exhausted or marked limited by the API, it carries
+`✖` and the theme's error color:
 
 ```text
-OpenCode Go                              Monthly 85%  ⚠
-OpenCode Go                              Monthly 100% ✖
+OpenCode Go                              85%  ⚠
+OpenCode Go                              100% ✖
 ```
 
 The second row selects only the 5-hour and weekly meters, using the same urgency
@@ -178,19 +187,21 @@ order as expanded mode:
 - **`✓` (healthy):** neither short-window meter is urgent. The row reads
   `<meter> ✓ resets <countdown>` for the higher-percentage meter.
 
-Warning rows keep exactly two spaces before `⚠`. The symbol, status text, and
-theme color always agree, so the mode is readable without color.
+Warning rows keep exactly two spaces before `⚠`. On the second row, the meter
+label stays in the normal text color and only the status segment (`⚠ 14:15`,
+`✖ limit reached`, or `✓ resets 7d`) uses the status color. The symbol, status
+text, and theme color always agree, so the mode is readable without color.
 
 Compact mode keeps its other states in two distinct rows as well:
 
 ```text
-OpenCode Go                              Monthly …
+OpenCode Go                              …
 … loading limits
 
-OpenCode Go                              Monthly –
+OpenCode Go                              –
 – Go usage unavailable
 
-OpenCode Go                              Monthly ✖
+OpenCode Go                              ✖
 ✖ error · limits endpoint offline
 ```
 
@@ -227,7 +238,7 @@ Monthly                         7d
 | Meter | Warning format | Example |
 | --- | --- | --- |
 | 5-hour window | Local time, rounded to the nearest 15 minutes | `⚠ 10:45` |
-| Weekly | Local weekday and hour | `⚠ Sat 8pm` |
+| Weekly | Local weekday and 24-hour time, rounded to the nearest hour | `⚠ Sat 20:00` |
 | Monthly | Short UTC date | `⚠ Dec 2` |
 
 ## Runout estimates and display limitations
@@ -316,7 +327,7 @@ OpenCode loads it through the `./tui` export.
 | `make test` | Formatting, typecheck, unit tests, and integration tests. No host tools required. |
 | `make format-check` | Formatting for the checked source, demo, and config files, and a strict-JSON check of the first JSON example in this README. |
 | `make typecheck` | `tsc --noEmit` over `src`, `test`, and `demo`. |
-| `make demo` | Renders the compact sidebar through the real OpenTUI test renderer with fake usage data and rewrites `demo/demo.svg`. |
+| `make demo` | Renders the expanded and compact sidebars through the real OpenTUI test renderer with fake usage data and rewrites `demo/expanded.svg` and `demo/compact.svg`. |
 | `make test-unit` | Unit tests for settings, compact status selection/formatting, and usage formatting/estimation. |
 | `make test-integration` | Renders the plugin in a test OpenTUI renderer and covers slot registration, expanded and compact layouts, data loading, error states, refresh, and cleanup. |
 | `make test-e2e` | Opt-in real-host smoke test: launches OpenCode in tmux with an isolated HOME/XDG tree and checks that the session sidebar renders the **OpenCode Go** heading. |
@@ -380,7 +391,7 @@ The integration tests use a path-safe Solid transform preload in
 | `test/integration/` | Mock OpenCode host and TUI rendering tests. |
 | `test/e2e/` | Opt-in real-host tmux smoke test and its isolated fixtures. |
 | `test/preload.ts` | Bun preload that applies the OpenTUI Solid transform. |
-| `demo/capture.ts` | Deterministic compact-mode capture script for `demo/demo.svg`. |
+| `demo/capture.ts` | Deterministic expanded- and compact-mode capture script for `demo/expanded.svg` and `demo/compact.svg`. |
 | `Makefile` | Canonical install, format, typecheck, test, demo, CI, and E2E gates. |
 | `.github/workflows/ci.yml` | Host-free checks plus the OpenCode 2.2.7/2.3.2/2.4.2 E2E matrix on Bun 1.4.4. |
 | `.github/workflows/release.yml` | Guarded, provenance-signed npm publish for non-prerelease GitHub releases. |
@@ -438,3 +449,7 @@ To inspect the exact tarball locally before releasing:
 ```sh
 npm pack --dry-run
 ```
+
+## License
+
+Released under the [MIT License](LICENSE).

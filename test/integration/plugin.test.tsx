@@ -268,9 +268,14 @@ describe("compact mode", () => {
       const lines = nonEmptyLines(testRenderer.captureCharFrame());
       expect(lines).toHaveLength(2);
       expect(lines[0]).toContain("OpenCode Go");
-      expect(lines[0]).toContain("Monthly 66%");
+      expect(lines[0]).toContain("66%");
+      expect(lines[0]).not.toContain("Monthly");
       expect(lines[0]).not.toContain("⚠");
       expect(lines[1]).toBe("5-hour window  ⚠ 14:15");
+      const spans = testRenderer.captureSpans();
+      expect(spanColor(spans, "66%")).toBe("#00ff00");
+      expect(spanColor(spans, "5-hour window")).toBe("#ffffff");
+      expect(spanColor(spans, "⚠ 14:15")).toBe("#ffff00");
       cleanup();
     } finally {
       nowSpy.mockRestore();
@@ -291,11 +296,12 @@ describe("compact mode", () => {
 
       const lines = nonEmptyLines(testRenderer.captureCharFrame());
       expect(lines).toHaveLength(2);
-      expect(lines[0]).toContain("Monthly 80%  ⚠");
+      expect(lines[0]).toContain("80%  ⚠");
       expect(lines[1]).toContain("Weekly ✓ resets 1d");
-      expect(spanColor(testRenderer.captureSpans(), "Monthly 80%")).toBe(
-        "#ffff00",
-      );
+      const spans = testRenderer.captureSpans();
+      expect(spanColor(spans, "80%  ⚠")).toBe("#ffff00");
+      expect(spanColor(spans, "Weekly")).toBe("#ffffff");
+      expect(spanColor(spans, "✓ resets 1d")).toBe("#00ff00");
       cleanup();
     } finally {
       await testRenderer.dispose();
@@ -320,10 +326,35 @@ describe("compact mode", () => {
 
       const lines = nonEmptyLines(testRenderer.captureCharFrame());
       expect(lines).toHaveLength(2);
-      expect(lines[0]).toContain("Monthly 100% ✖");
-      expect(spanColor(testRenderer.captureSpans(), "Monthly 100%")).toBe(
-        "#ff0000",
-      );
+      expect(lines[0]).toContain("100% ✖");
+      expect(spanColor(testRenderer.captureSpans(), "100% ✖")).toBe("#ff0000");
+      cleanup();
+    } finally {
+      await testRenderer.dispose();
+    }
+  });
+
+  test("keeps the short-window label base-colored and colors a critical status", async () => {
+    const testRenderer = await createTestRenderer({ width: 64, height: 6 });
+    try {
+      const base = usageAt(Date.now());
+      const host = createMockHost({
+        renderer: testRenderer.renderer,
+        usage: {
+          ...base,
+          rolling: { ...base.rolling, percent: 100, limited: true },
+        },
+        options: { mode: "compact" },
+      });
+      const cleanup = await mountHost(host);
+      await testRenderer.flush();
+
+      const lines = nonEmptyLines(testRenderer.captureCharFrame());
+      expect(lines).toHaveLength(2);
+      expect(lines[1]).toBe("5-hour window ✖ limit reached");
+      const spans = testRenderer.captureSpans();
+      expect(spanColor(spans, "5-hour window")).toBe("#ffffff");
+      expect(spanColor(spans, "✖ limit reached")).toBe("#ff0000");
       cleanup();
     } finally {
       await testRenderer.dispose();
@@ -349,7 +380,8 @@ describe("compact mode", () => {
         unavailableRenderer.captureCharFrame(),
       );
       expect(unavailableLines).toHaveLength(2);
-      expect(unavailableLines[0]).toContain("Monthly –");
+      expect(unavailableLines[0]).toContain("–");
+      expect(unavailableLines[0]).not.toContain("Monthly");
       expect(unavailableLines[1]).toContain("– Go usage unavailable");
       expect(unavailableLines[1]).not.toContain("error");
 
@@ -362,7 +394,8 @@ describe("compact mode", () => {
       await errorRenderer.flush();
       const errorLines = nonEmptyLines(errorRenderer.captureCharFrame());
       expect(errorLines).toHaveLength(2);
-      expect(errorLines[0]).toContain("Monthly ✖");
+      expect(errorLines[0]).toContain("✖");
+      expect(errorLines[0]).not.toContain("Monthly");
       expect(errorLines[1]).toContain("✖ error");
       expect(errorLines[1]).toContain("limits endpoint offline");
       expect(errorLines[1]).not.toContain("unavailable");
@@ -376,7 +409,8 @@ describe("compact mode", () => {
       await loadingRenderer.flush();
       const loadingLines = nonEmptyLines(loadingRenderer.captureCharFrame());
       expect(loadingLines).toHaveLength(2);
-      expect(loadingLines[0]).toContain("Monthly …");
+      expect(loadingLines[0]).toContain("…");
+      expect(loadingLines[0]).not.toContain("Monthly");
       expect(loadingLines[1]).toContain("… loading limits");
       expect(loadingLines[1]).not.toContain("unavailable");
       expect(loadingLines[1]).not.toContain("error");

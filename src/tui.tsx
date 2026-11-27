@@ -226,12 +226,13 @@ function QuotaWidget(props: { refreshMs: number; mode: SidebarMode }) {
             {compactRows().summary.text}
           </text>
         </box>
-        <text
-          fg={toneColor(compactRows().detail.tone)}
-          width="100%"
-          wrapMode="none"
-        >
-          {compactRows().detail.text}
+        <text width="100%" wrapMode="none">
+          <span style={{ fg: context.theme.text.base }}>
+            {compactRows().detail.label}
+          </span>
+          <span style={{ fg: toneColor(compactRows().detail.tone) }}>
+            {compactRows().detail.status}
+          </span>
         </text>
       </Show>
     </box>

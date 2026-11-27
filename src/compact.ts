@@ -30,12 +30,21 @@ export interface CompactRow {
 }
 
 /**
+ * The second compact row keeps the meter label in the base text color and
+ * colors only the status segment that follows it.
+ */
+export interface CompactDetailRow extends CompactRow {
+  readonly label: string;
+  readonly status: string;
+}
+
+/**
  * The compact sidebar is two rows: a monthly summary on the right of the title
  * row, then the most urgent short-window (5-hour or weekly) status.
  */
 export interface CompactRows {
   readonly summary: CompactRow;
-  readonly detail: CompactRow;
+  readonly detail: CompactDetailRow;
 }
 
 const TITLE = "OpenCode Go";
@@ -174,12 +183,12 @@ export function formatCompactPercent(percent: number): string {
 /**
  * Format the monthly summary for the right side of the first compact row.
  *
- * Healthy months stay plain (`Monthly 66%`). Approaching or exhausted months
- * carry the same explicit symbol as the second row so the state is readable
- * without relying on theme color.
+ * The title already supplies the context, so the summary is a bare percentage
+ * (`66%`). Approaching or exhausted months carry the same explicit symbol as
+ * the second row so the state is readable without relying on theme color.
  */
 export function formatCompactMonthly(status: CompactStatus): string {
-  const summary = `${status.label} ${formatCompactPercent(status.percent)}`;
+  const summary = formatCompactPercent(status.percent);
   if (status.severity === "critical")
     return `${summary} ${SEVERITY_SYMBOLS.critical}`;
   if (status.severity === "warning") {
@@ -191,13 +200,15 @@ export function formatCompactMonthly(status: CompactStatus): string {
 /**
  * Format the most urgent short-window status for the second compact row.
  *
- * Warnings keep exactly two spaces before `⚠`, matching the requested
- * `5-hour window  ⚠ 14:15` shape. Critical and healthy rows use one space.
+ * The label and status are returned separately so the renderer can keep the
+ * meter label in the base text color. Warnings keep exactly two spaces before
+ * `⚠`, matching the requested `5-hour window  ⚠ 14:15` shape. Critical and
+ * healthy rows use one space.
  */
-export function formatCompactShortWindow(
+export function formatCompactShortWindowParts(
   status: CompactStatus,
   now: number,
-): string {
+): { readonly label: string; readonly status: string } {
   const detail =
     status.severity === "critical"
       ? "limit reached"
@@ -205,17 +216,33 @@ export function formatCompactShortWindow(
         ? formatRunoutDate(status.limit, status.projection, now)
         : `resets ${formatResetCountdown(status.resetsAt, new Date(now))}`;
   const gap = status.severity === "warning" ? "  " : " ";
-  return `${status.label}${gap}${SEVERITY_SYMBOLS[status.severity]} ${detail}`;
+  return {
+    label: status.label,
+    status: `${gap}${SEVERITY_SYMBOLS[status.severity]} ${detail}`,
+  };
+}
+
+/** Format the whole second compact row as one string. */
+export function formatCompactShortWindow(
+  status: CompactStatus,
+  now: number,
+): string {
+  const { label, status: statusText } = formatCompactShortWindowParts(
+    status,
+    now,
+  );
+  return `${label}${statusText}`;
 }
 
 function monthlyTone(status: CompactStatus): CompactTone {
-  return status.severity === "ok" ? "neutral" : status.severity;
+  return status.severity;
 }
 
 /** Build both compact rows from a usage payload. */
 export function formatCompactStatus(usage: GoUsage, now: number): CompactRows {
   const monthly = selectMonthlyStatus(usage, now);
   const shortWindow = selectCompactStatus(usage, now);
+  const { label, status } = formatCompactShortWindowParts(shortWindow, now);
 
   return {
     summary: {
@@ -223,8 +250,10 @@ export function formatCompactStatus(usage: GoUsage, now: number): CompactRows {
       tone: monthlyTone(monthly),
     },
     detail: {
-      text: formatCompactShortWindow(shortWindow, now),
+      text: `${label}${status}`,
       tone: shortWindow.severity,
+      label,
+      status,
     },
   };
 }
@@ -232,16 +261,26 @@ export function formatCompactStatus(usage: GoUsage, now: number): CompactRows {
 /** Two-row compact status shown while the first request is in flight. */
 export function formatCompactLoading(): CompactRows {
   return {
-    summary: { text: "Monthly …", tone: "muted" },
-    detail: { text: "… loading limits", tone: "muted" },
+    summary: { text: "…", tone: "muted" },
+    detail: {
+      text: "… loading limits",
+      tone: "muted",
+      label: "",
+      status: "… loading limits",
+    },
   };
 }
 
 /** Two-row compact status when the workspace has no Go allowance. */
 export function formatCompactUnavailable(): CompactRows {
   return {
-    summary: { text: "Monthly –", tone: "muted" },
-    detail: { text: "– Go usage unavailable", tone: "muted" },
+    summary: { text: "–", tone: "muted" },
+    detail: {
+      text: "– Go usage unavailable",
+      tone: "muted",
+      label: "",
+      status: "– Go usage unavailable",
+    },
   };
 }
 
@@ -249,8 +288,9 @@ export function formatCompactUnavailable(): CompactRows {
 export function formatCompactError(cause: string): CompactRows {
   const message =
     cause.replace(/\s+/g, " ").trim() || "Could not load Go limits";
+  const text = `✖ error · ${message}`;
   return {
-    summary: { text: "Monthly ✖", tone: "critical" },
-    detail: { text: `✖ error · ${message}`, tone: "critical" },
+    summary: { text: "✖", tone: "critical" },
+    detail: { text, tone: "critical", label: "", status: text },
   };
 }
