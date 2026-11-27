@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+  compactTitle,
   formatCompactError,
   formatCompactLoading,
   formatCompactMonthly,
@@ -94,6 +95,10 @@ describe("monthly compact summary", () => {
     expect(rows.summary.text).not.toContain("Monthly");
     expect(rows.summary.text).not.toContain("⚠");
     expect(rows.summary.text).not.toContain("✖");
+  });
+
+  test("exposes the bold first-row title separately from the percentage", () => {
+    expect(compactTitle()).toBe("OpenCode Go");
   });
 });
 

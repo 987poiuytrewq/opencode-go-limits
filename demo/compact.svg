@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="624" height="84" viewBox="0 0 624 84" role="img" aria-labelledby="demo-title demo-desc">
-  <title id="demo-title">OpenCode Go compact sidebar with a right-aligned monthly percentage and a projected 5-hour runout</title>
-  <desc id="demo-desc">Terminal-style screenshot of the OpenCode Go sidebar in compact mode, captured from a 64 by 3 character frame rendered with fake usage data. The 2 visible rows read:                                                              66%
+  <title id="demo-title">OpenCode Go compact sidebar with a bold title, a right-aligned monthly percentage, and a projected 5-hour runout</title>
+  <desc id="demo-desc">Terminal-style screenshot of the OpenCode Go sidebar in compact mode, captured from a 64 by 3 character frame rendered with fake usage data. The 2 visible rows read: OpenCode Go                                                  66%
 5-hour  ⚠ 14:15</desc>
   <rect width="624" height="84" fill="#0d1117"/>
+    <text x="24" y="35" fill="#c9d1d9" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" font-weight="bold" xml:space="preserve">OpenCode Go</text>
     <text x="573" y="35" fill="#3fb950" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">66%</text>
     <text x="24" y="57" fill="#c9d1d9" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">5-hour</text>
     <text x="78" y="57" fill="#d29922" font-family="SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="15" xml:space="preserve">  ⚠ 14:15</text>

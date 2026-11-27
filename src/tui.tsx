@@ -2,6 +2,7 @@ import { For, Show, createSignal, onCleanup, onMount } from "solid-js";
 import { TextAttributes } from "@opentui/core";
 import { Plugin, usePlugin } from "@opencode/plugin/tui";
 import {
+  compactTitle,
   formatCompactError,
   formatCompactLoading,
   formatCompactStatus,
@@ -9,7 +10,7 @@ import {
   type CompactRows,
   type CompactTone,
 } from "./compact";
-import { buildPaceRows, type PaceTone } from "./pace";
+import { PACE_TITLE, buildPaceRows, type PaceTone } from "./pace";
 import { pluginSettings, type SidebarMode } from "./settings";
 import {
   LIMITS,
@@ -222,6 +223,9 @@ function QuotaWidget(props: { refreshMs: number; mode: SidebarMode }) {
         </Show>
       </Show>
       <Show when={props.mode === "pace"}>
+        <text fg={context.theme.text.base} attributes={TextAttributes.BOLD}>
+          {PACE_TITLE}
+        </text>
         <Show
           when={usage()}
           fallback={
@@ -240,12 +244,6 @@ function QuotaWidget(props: { refreshMs: number; mode: SidebarMode }) {
                   <span style={{ fg: toneColor(row.tone) }}>
                     {row.percentText}
                   </span>
-                  <Show when={row.status.length > 0}>
-                    <span style={{ fg: toneColor(row.tone) }}>
-                      {" "}
-                      {row.status}{" "}
-                    </span>
-                  </Show>
                   <span
                     style={{
                       fg: row.critical
@@ -275,10 +273,13 @@ function QuotaWidget(props: { refreshMs: number; mode: SidebarMode }) {
       <Show when={props.mode === "compact"}>
         <box
           flexDirection="row"
-          justifyContent="flex-end"
+          justifyContent="space-between"
           alignItems="center"
           width="100%"
         >
+          <text fg={context.theme.text.base} attributes={TextAttributes.BOLD}>
+            {compactTitle()}
+          </text>
           <text fg={toneColor(compactRows().summary.tone)}>
             {compactRows().summary.text}
           </text>

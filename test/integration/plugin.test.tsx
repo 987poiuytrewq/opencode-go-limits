@@ -1,6 +1,10 @@
 /** @jsxImportSource @opentui/solid */
 import { describe, expect, spyOn, test } from "bun:test";
-import type { CapturedFrame, CapturedSpan } from "@opentui/core";
+import {
+  TextAttributes,
+  type CapturedFrame,
+  type CapturedSpan,
+} from "@opentui/core";
 import { createTestRenderer } from "@opentui/core/testing";
 import { render } from "@opentui/solid";
 import { PluginContextProvider } from "@opencode/plugin/tui";
@@ -232,6 +236,17 @@ function colorOf(span: CapturedSpan): string {
     .join("")}`;
 }
 
+/** Whether the first span containing `text` is rendered bold. */
+function spanBold(spans: CapturedFrame, text: string): boolean | undefined {
+  for (const line of spans.lines) {
+    for (const span of line.spans) {
+      if (!span.text.includes(text)) continue;
+      return (span.attributes & TextAttributes.BOLD) !== 0;
+    }
+  }
+  return undefined;
+}
+
 /** Captured spans for the first rendered line containing `needle`. */
 function lineSpans(spans: CapturedFrame, needle: string): CapturedSpan[] {
   for (const line of spans.lines) {
@@ -239,6 +254,17 @@ function lineSpans(spans: CapturedFrame, needle: string): CapturedSpan[] {
     if (text.includes(needle)) return line.spans;
   }
   throw new Error(`No rendered line contains ${JSON.stringify(needle)}`);
+}
+
+/** Zero-based column where the first composite bar glyph starts on a line. */
+function barStartColumn(spans: CapturedFrame, needle: string): number {
+  let column = 0;
+  for (const span of lineSpans(spans, needle)) {
+    const offset = span.text.indexOf("━");
+    if (offset >= 0) return column + offset;
+    column += span.width;
+  }
+  throw new Error(`No composite bar on the line containing ${needle}`);
 }
 
 function thickColors(spans: CapturedSpan[]): Set<string> {
@@ -271,7 +297,7 @@ describe("compact mode", () => {
     }
   });
 
-  test("renders a right-aligned monthly percentage and the most urgent short-window warning on two rows", async () => {
+  test("renders the bold title and right-aligned monthly percentage plus the most urgent short-window warning on two rows", async () => {
     const testRenderer = await createTestRenderer({ width: 64, height: 6 });
     const fixedNow = new Date(2026, 10, 27, 12, 45, 0, 0).getTime();
     const nowSpy = spyOn(Date, "now").mockReturnValue(fixedNow);
@@ -294,10 +320,15 @@ describe("compact mode", () => {
 
       const lines = nonEmptyLines(testRenderer.captureCharFrame());
       expect(lines).toHaveLength(2);
-      expect(lines[0]?.trim()).toBe("66%");
-      expect(lines[0]?.startsWith(" ")).toBe(true);
+      expect(lines[0]).toMatch(/^OpenCode Go\s+66%$/);
+      expect(lines[0]?.endsWith("66%")).toBe(true);
+      expect(lines[0]).not.toContain("Monthly");
+      expect(lines[0]).not.toContain("⚠");
+      expect(lines[0]).not.toContain("✖");
       expect(lines[1]).toBe("5-hour  ⚠ 14:15");
       const spans = testRenderer.captureSpans();
+      expect(spanColor(spans, "OpenCode Go")).toBe("#c9d1d9");
+      expect(spanBold(spans, "OpenCode Go")).toBe(true);
       expect(spanColor(spans, "66%")).toBe("#3fb950");
       expect(spanColor(spans, "5-hour")).toBe("#c9d1d9");
       expect(spanColor(spans, "⚠ 14:15")).toBe("#d29922");
@@ -321,9 +352,10 @@ describe("compact mode", () => {
 
       const lines = nonEmptyLines(testRenderer.captureCharFrame());
       expect(lines).toHaveLength(2);
-      expect(lines[0]?.trim()).toBe("80%");
+      expect(lines[0]).toMatch(/^OpenCode Go\s+80%$/);
       expect(lines[1]).toContain("Weekly ✓ resets 1d");
       const spans = testRenderer.captureSpans();
+      expect(spanBold(spans, "OpenCode Go")).toBe(true);
       expect(spanColor(spans, "80%")).toBe("#d29922");
       expect(spanColor(spans, "Weekly")).toBe("#c9d1d9");
       expect(spanColor(spans, "✓ resets 1d")).toBe("#3fb950");
@@ -351,8 +383,10 @@ describe("compact mode", () => {
 
       const lines = nonEmptyLines(testRenderer.captureCharFrame());
       expect(lines).toHaveLength(2);
-      expect(lines[0]?.trim()).toBe("100%");
-      expect(spanColor(testRenderer.captureSpans(), "100%")).toBe("#f85149");
+      expect(lines[0]).toMatch(/^OpenCode Go\s+100%$/);
+      const spans = testRenderer.captureSpans();
+      expect(spanBold(spans, "OpenCode Go")).toBe(true);
+      expect(spanColor(spans, "100%")).toBe("#f85149");
       cleanup();
     } finally {
       await testRenderer.dispose();
@@ -376,7 +410,7 @@ describe("compact mode", () => {
 
       const lines = nonEmptyLines(testRenderer.captureCharFrame());
       expect(lines).toHaveLength(2);
-      expect(lines[0]?.trim()).toBe("20%");
+      expect(lines[0]).toMatch(/^OpenCode Go\s+20%$/);
       expect(spanColor(testRenderer.captureSpans(), "20%")).toBe("#f85149");
       cleanup();
     } finally {
@@ -477,7 +511,7 @@ describe("compact mode", () => {
 });
 
 describe("pace mode", () => {
-  test("renders exactly three composite pace rows with behind and ahead segments", async () => {
+  test("renders a bold title and exactly three composite pace rows with behind and ahead segments", async () => {
     const testRenderer = await createTestRenderer({ width: 64, height: 6 });
     const fixedNow = new Date(2026, 10, 27, 12, 45, 0, 0).getTime();
     const nowSpy = spyOn(Date, "now").mockReturnValue(fixedNow);
@@ -491,19 +525,27 @@ describe("pace mode", () => {
       await testRenderer.flush();
 
       const lines = nonEmptyLines(testRenderer.captureCharFrame());
-      expect(lines).toHaveLength(3);
-      expect(lines[0]).toContain("5-hour");
-      expect(lines[0]).toContain("25% ");
-      expect(lines[1]).toContain("Weekly");
-      expect(lines[1]).toContain("95% ");
-      expect(lines[2]).toContain("Monthly");
-      expect(lines[2]).toContain("66% ");
-      expect(lines.join("\n")).not.toContain("OpenCode Go");
+      expect(lines).toHaveLength(4);
+      expect(lines[0]).toBe("OpenCode Go");
+      expect(lines[1]).toContain("5-hour");
+      expect(lines[1]).toContain(" 25% ");
+      expect(lines[2]).toContain("Weekly");
+      expect(lines[2]).toContain(" 95% ");
+      expect(lines[3]).toContain("Monthly");
+      expect(lines[3]).toContain(" 66% ");
 
       const spans = testRenderer.captureSpans();
-      expect(spanColor(spans, "25% ")).toBe("#3fb950");
-      expect(spanColor(spans, "95% ")).toBe("#d29922");
-      expect(spanColor(spans, "66% ")).toBe("#3fb950");
+      expect(spanBold(spans, "OpenCode Go")).toBe(true);
+      expect(spanColor(spans, "OpenCode Go")).toBe("#c9d1d9");
+      expect(spanColor(spans, " 25% ")).toBe("#3fb950");
+      expect(spanColor(spans, " 95% ")).toBe("#d29922");
+      expect(spanColor(spans, " 66% ")).toBe("#3fb950");
+
+      const barColumns = ["5-hour", "Weekly", "Monthly"].map((label) =>
+        barStartColumn(spans, label),
+      );
+      expect(new Set(barColumns).size).toBe(1);
+      expect(barColumns[0]).toBe(19);
 
       const rollingColors = thickColors(lineSpans(spans, "5-hour"));
       expect(rollingColors).toContain("#3fb950");
@@ -522,7 +564,7 @@ describe("pace mode", () => {
     }
   });
 
-  test("renders a limited pace row as unmistakably critical red with status text", async () => {
+  test("renders a limited pace row as unmistakably critical red without status text", async () => {
     const testRenderer = await createTestRenderer({ width: 64, height: 6 });
     const fixedNow = new Date(2026, 10, 27, 12, 45, 0, 0).getTime();
     const nowSpy = spyOn(Date, "now").mockReturnValue(fixedNow);
@@ -540,13 +582,15 @@ describe("pace mode", () => {
       await testRenderer.flush();
 
       const lines = nonEmptyLines(testRenderer.captureCharFrame());
-      expect(lines).toHaveLength(3);
-      expect(lines[2]).toContain("Monthly");
-      expect(lines[2]).toContain("100% ");
-      expect(lines[2]).toContain("✖ limit reached");
+      expect(lines).toHaveLength(4);
+      expect(lines[0]).toBe("OpenCode Go");
+      expect(lines[3]).toContain("Monthly");
+      expect(lines[3]).toContain("100% ");
+      expect(lines[3]).not.toContain("✖");
+      expect(lines[3]).not.toContain("limit reached");
 
       const spans = testRenderer.captureSpans();
-      expect(spanColor(spans, "✖ limit reached")).toBe("#f85149");
+      expect(spanColor(spans, "100% ")).toBe("#f85149");
       const monthlySpans = lineSpans(spans, "Monthly");
       const bar = monthlySpans.find((span) => span.text.includes("━"));
       expect(bar).toBeDefined();
@@ -560,7 +604,7 @@ describe("pace mode", () => {
     }
   });
 
-  test("keeps pace loading, unavailable, and error states distinct", async () => {
+  test("keeps pace loading, unavailable, and error states distinct below the title", async () => {
     const loadingRenderer = await createTestRenderer({ width: 64, height: 4 });
     const unavailableRenderer = await createTestRenderer({
       width: 64,
@@ -576,6 +620,7 @@ describe("pace mode", () => {
       const loadingCleanup = await mountHost(loadingHost);
       await loadingRenderer.flush();
       expect(nonEmptyLines(loadingRenderer.captureCharFrame())).toEqual([
+        "OpenCode Go",
         "… loading limits",
       ]);
 
@@ -587,6 +632,7 @@ describe("pace mode", () => {
       const unavailableCleanup = await mountHost(unavailableHost);
       await unavailableRenderer.flush();
       expect(nonEmptyLines(unavailableRenderer.captureCharFrame())).toEqual([
+        "OpenCode Go",
         "– Go usage unavailable",
       ]);
 
@@ -598,6 +644,7 @@ describe("pace mode", () => {
       const errorCleanup = await mountHost(errorHost);
       await errorRenderer.flush();
       expect(nonEmptyLines(errorRenderer.captureCharFrame())).toEqual([
+        "OpenCode Go",
         "✖ error · limits endpoint offline",
       ]);
 
