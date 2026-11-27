@@ -162,11 +162,11 @@ OpenCode Go                              66%
 5-hour window  ⚠ 14:15
 ```
 
-The monthly summary stays plain when the month is healthy. When the monthly
-meter is approaching its limit (80% or more, or projected to run out before it
-resets), the value carries `⚠` and the theme's warning color. When it is
-exhausted or marked limited by the API, it carries `✖` and the theme's error
-color:
+The monthly percentage uses the theme's success color when the month is
+healthy. When the monthly meter is approaching its limit (80% or more, or
+projected to run out before it resets), the value carries `⚠` and the theme's
+warning color. When it is exhausted or marked limited by the API, it carries
+`✖` and the theme's error color:
 
 ```text
 OpenCode Go                              85%  ⚠
@@ -187,8 +187,10 @@ order as expanded mode:
 - **`✓` (healthy):** neither short-window meter is urgent. The row reads
   `<meter> ✓ resets <countdown>` for the higher-percentage meter.
 
-Warning rows keep exactly two spaces before `⚠`. The symbol, status text, and
-theme color always agree, so the mode is readable without color.
+Warning rows keep exactly two spaces before `⚠`. On the second row, the meter
+label stays in the normal text color and only the status segment (`⚠ 14:15`,
+`✖ limit reached`, or `✓ resets 7d`) uses the status color. The symbol, status
+text, and theme color always agree, so the mode is readable without color.
 
 Compact mode keeps its other states in two distinct rows as well:
 

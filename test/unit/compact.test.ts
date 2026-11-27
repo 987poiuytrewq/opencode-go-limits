@@ -34,7 +34,7 @@ function usage(
 }
 
 describe("monthly compact summary", () => {
-  test("keeps a healthy monthly row plain", () => {
+  test("uses the success tone for a healthy monthly row", () => {
     const status = selectMonthlyStatus(
       usage([10, 20, 66], [NOW + HOUR, NOW + 7 * DAY, NOW + 5 * DAY]),
       NOW,
@@ -46,7 +46,7 @@ describe("monthly compact summary", () => {
 
     expect(status.severity).toBe("ok");
     expect(formatCompactMonthly(status)).toBe("66%");
-    expect(rows.summary).toEqual({ text: "66%", tone: "neutral" });
+    expect(rows.summary).toEqual({ text: "66%", tone: "ok" });
   });
 
   test("marks an approaching monthly value with two spaces and a warning", () => {
@@ -105,6 +105,8 @@ describe("short-window compact row", () => {
     expect(rows.detail).toEqual({
       text: "5-hour window  ⚠ 14:15",
       tone: "warning",
+      label: "5-hour window",
+      status: "  ⚠ 14:15",
     });
   });
 
@@ -189,15 +191,30 @@ describe("compact state formatting", () => {
 
     expect(loading).toEqual({
       summary: { text: "…", tone: "muted" },
-      detail: { text: "… loading limits", tone: "muted" },
+      detail: {
+        text: "… loading limits",
+        tone: "muted",
+        label: "",
+        status: "… loading limits",
+      },
     });
     expect(unavailable).toEqual({
       summary: { text: "–", tone: "muted" },
-      detail: { text: "– Go usage unavailable", tone: "muted" },
+      detail: {
+        text: "– Go usage unavailable",
+        tone: "muted",
+        label: "",
+        status: "– Go usage unavailable",
+      },
     });
     expect(error).toEqual({
       summary: { text: "✖", tone: "critical" },
-      detail: { text: "✖ error · limits endpoint offline", tone: "critical" },
+      detail: {
+        text: "✖ error · limits endpoint offline",
+        tone: "critical",
+        label: "",
+        status: "✖ error · limits endpoint offline",
+      },
     });
     expect(
       new Set([loading.detail.text, unavailable.detail.text, error.detail.text])
