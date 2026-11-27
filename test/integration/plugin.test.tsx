@@ -239,8 +239,7 @@ describe("compact mode", () => {
 
       const lines = nonEmptyLines(testRenderer.captureCharFrame());
       expect(lines).toHaveLength(1);
-      expect(lines[0]).toContain("OpenCode Go");
-      expect(lines[0]).toContain("⚠ WARN");
+      expect(lines[0]).toContain("OpenCode Go  ⚠ WARN");
       expect(lines[0]).toContain("Monthly 80%");
       expect(lines[0]).not.toContain("5-hour window");
       cleanup();
